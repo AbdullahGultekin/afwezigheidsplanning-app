@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Werknemer model
+model Werknemer {
+  id                String              @id @default(uuid())
+  naam              String
+  email             String?             @unique
+  nummerplaat       String?             // Auto nummerplaat
+  vakantiedagenTotaal Float           @default(20) // Totaal vakantiedagen per jaar
+  vakantiedagenOpgenomen Float        @default(0)  // Opgenomen vakantiedagen
+  actief            Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  urenregistraties  Urenregistratie[]
+  afwezigheden      Afwezigheid[]
+  kilometers        Kilometer[]
+  maandKmStanden    MaandKmStand[]
+}
+
+// Urenregistratie model
+model Urenregistratie {
+  id          String    @id @default(uuid())
+  werknemerId String
+  datum       DateTime
+  uren        Float
+  opmerking   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  werknemer   Werknemer @relation(fields: [werknemerId], references: [id], onDelete: Cascade)
+  
+  @@unique([werknemerId, datum])
+}
+
+// Afwezigheid model
+model Afwezigheid {
+  id          String    @id @default(uuid())
+  werknemerId String
+  startDatum  DateTime
+  eindDatum   DateTime
+  type        String    // VAKANTIE, ZIEK, PERSOONLIJK, AANGEPAST_1, AANGEPAST_2
+  uren        Float?    // Aantal uren afwezig (optioneel)
+  opmerking   String?
+  goedgekeurd Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  werknemer   Werknemer @relation(fields: [werknemerId], references: [id], onDelete: Cascade)
+}
+
+// Kilometer model
+model Kilometer {
+  id          String    @id @default(uuid())
+  werknemerId String
+  datum       DateTime
+  kilometers  Float
+  vanAdres    String?   // Van adres
+  naarAdres   String?   // Naar adres
+  doel        String?   // Doel van de rit
+  opmerking   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  werknemer   Werknemer @relation(fields: [werknemerId], references: [id], onDelete: Cascade)
+  
+  @@unique([werknemerId, datum])
+}
+
+// Maandelijkse km-stand voor begin/eind van maand tracking
+model MaandKmStand {
+  id              String    @id @default(uuid())
+  werknemerId     String
+  jaar            Int       // Bijv. 2026
+  maand           Int       // 1-12
+  beginKmStand    Float     // Km-stand begin van de maand
+  eindKmStand     Float?    // Km-stand eind van de maand (optioneel tot maand voorbij is)
+  elkeDagGereden  Float?    // Aantal dagen gereden (bijv. 22 dagen)
+  handtekening    String?   // Base64 encoded handtekening afbeelding
+  getekendOp      DateTime? // Datum/tijd van ondertekening
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  werknemer       Werknemer @relation(fields: [werknemerId], references: [id], onDelete: Cascade)
+  
+  @@unique([werknemerId, jaar, maand])
+}
