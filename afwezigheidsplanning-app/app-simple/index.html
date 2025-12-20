@@ -197,6 +197,29 @@
             align-items: center;
             flex-wrap: wrap;
         }
+        .cell-selected {
+            outline: 3px solid #007bff !important;
+            outline-offset: -2px;
+            background-color: #e7f3ff !important;
+            position: relative;
+        }
+        .cell-selected::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 2px solid #007bff;
+            pointer-events: none;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+        .btn-warning:hover {
+            background: #e0a800;
+        }
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -283,6 +306,7 @@
                     <input type="month" id="uren-bulk-maand" onchange="loadUrenBulk()" value="">
                 </div>
                 <button class="btn btn-success" onclick="saveUrenBulk()">💾 Alle Uren Opslaan</button>
+                <button class="btn btn-warning" onclick="clearSelectedCells('uren-bulk')" title="Wis geselecteerde cellen">🗑️ Wis Geselecteerde Cellen</button>
             </div>
             <div id="uren-bulk-list" style="overflow-x: auto;"></div>
         </div>
@@ -297,6 +321,7 @@
                 </div>
                 <button class="btn btn-success" onclick="saveKmBulk()">💾 Alle Kilometers Opslaan</button>
                 <button class="btn btn-primary" onclick="exportKmBulkToPDF()">📄 Exporteer naar PDF</button>
+                <button class="btn btn-warning" onclick="clearSelectedCells('kilometers-bulk')" title="Wis geselecteerde cellen">🗑️ Wis Geselecteerde Cellen</button>
             </div>
             <div id="kilometers-bulk-list" style="overflow-x: auto;"></div>
         </div>
@@ -311,6 +336,7 @@
                 </div>
                 <button class="btn btn-success" onclick="saveDagontvangstenBulk()">💾 Alle Ontvangsten Opslaan</button>
                 <button class="btn btn-primary" onclick="exportDagontvangstenToPDF()">📄 Exporteer naar PDF</button>
+                <button class="btn btn-warning" onclick="clearSelectedCells('dagontvangsten')" title="Wis geselecteerde cellen">🗑️ Wis Geselecteerde Cellen</button>
             </div>
             <div id="dagontvangsten-list" style="overflow-x: auto;"></div>
         </div>
@@ -336,6 +362,7 @@
                 </div>
                 <button class="btn btn-success" onclick="saveGratisColaBulk()">💾 Alle Gratis Cola Opslaan</button>
                 <button class="btn btn-primary" onclick="exportGratisColaToPDF()">📄 Exporteer naar PDF</button>
+                <button class="btn btn-warning" onclick="clearSelectedCells('gratis-cola')" title="Wis geselecteerde cellen">🗑️ Wis Geselecteerde Cellen</button>
             </div>
             <div id="gratis-cola-list" style="overflow-x: auto;"></div>
         </div>
@@ -377,6 +404,168 @@
     <script>
         let currentPage = 'werknemers';
         let editingId = null;
+        let selectedCells = new Set(); // Track selected cells
+
+        // Cell selection functionality
+        function setupCellSelection() {
+            // Remove old event listeners by removing and re-adding
+            document.removeEventListener('click', handleCellClick);
+            document.addEventListener('click', handleCellClick, true);
+        }
+
+        function handleCellClick(event) {
+            // Don't handle clicks on buttons
+            if (event.target.tagName === 'BUTTON' || event.target.closest('button')) {
+                return;
+            }
+            
+            const target = event.target;
+            let cell = null;
+            let input = null;
+            
+            // Check if click is on input or on cell
+            if (target.tagName === 'INPUT' && (target.type === 'text' || target.type === 'number')) {
+                input = target;
+                cell = target.closest('td');
+            } else if (target.tagName === 'TD') {
+                cell = target;
+                input = cell.querySelector('input[type="text"], input[type="number"]');
+            } else {
+                // Check if parent is a td
+                cell = target.closest('td');
+                if (cell) {
+                    input = cell.querySelector('input[type="text"], input[type="number"]');
+                }
+            }
+            
+            if (!cell || !input) return;
+            
+            // Check if this is a data cell (not header or total row)
+            const row = cell.closest('tr');
+            if (!row) return;
+            
+            // Skip header rows and total rows
+            if (row.parentElement.tagName === 'THEAD' || 
+                row.querySelector('td:first-child')?.textContent.trim() === 'TOTAAL' ||
+                row.querySelector('td:first-child')?.textContent.trim() === 'TOTAAL TOTAAL') {
+                return;
+            }
+            
+            // Handle selection
+            if (event.ctrlKey || event.metaKey) {
+                // Multi-select mode
+                event.preventDefault();
+                event.stopPropagation();
+                toggleCellSelection(cell, input);
+            } else {
+                // Single select mode
+                if (!selectedCells.has(cell)) {
+                    clearAllSelections();
+                    selectCell(cell, input);
+                }
+                // Don't prevent default - allow normal input focus
+            }
+        }
+
+        function selectCell(cell, input) {
+            if (!cell || !input) return;
+            cell.classList.add('cell-selected');
+            selectedCells.add(cell);
+        }
+
+        function toggleCellSelection(cell, input) {
+            if (!cell || !input) return;
+            if (selectedCells.has(cell)) {
+                cell.classList.remove('cell-selected');
+                selectedCells.delete(cell);
+            } else {
+                cell.classList.add('cell-selected');
+                selectedCells.add(cell);
+            }
+        }
+
+        function clearAllSelections() {
+            selectedCells.forEach(cell => {
+                if (cell && cell.classList) {
+                    cell.classList.remove('cell-selected');
+                }
+            });
+            selectedCells.clear();
+        }
+
+        // Clear selected cells function
+        function clearSelectedCells(pageType) {
+            if (selectedCells.size === 0) {
+                alert('Geen cellen geselecteerd. Klik op een cel om te selecteren, of gebruik Ctrl+Klik voor meerdere cellen.');
+                return;
+            }
+
+            if (!confirm(`Weet je zeker dat je ${selectedCells.size} geselecteerde cel(len) wilt wissen?`)) {
+                return;
+            }
+
+            let cleared = 0;
+
+            selectedCells.forEach(cell => {
+                if (!cell) return;
+                
+                const input = cell.querySelector('input');
+                if (!input) return;
+
+                // Clear based on page type
+                if (pageType === 'uren-bulk') {
+                    const werknemerId = input.getAttribute('data-werknemer-id');
+                    const day = parseInt(input.getAttribute('data-day'));
+                    if (werknemerId && day) {
+                        // Clear both uren and afwezigheid
+                        updateUrenBulkCell(werknemerId, day, 'uren', '');
+                        updateUrenBulkCell(werknemerId, day, 'afwezigheid', '');
+                        input.value = '';
+                        updateCellColor(input);
+                        cleared++;
+                    }
+                } else if (pageType === 'kilometers-bulk') {
+                    const werknemerId = input.getAttribute('data-werknemer-id');
+                    const day = parseInt(input.getAttribute('data-day'));
+                    if (werknemerId && day) {
+                        kmBulkData[werknemerId][day] = '';
+                        input.value = '';
+                        // Update totals for this row
+                        updateKmBulkRowTotals(input.closest('tr'), werknemerId);
+                        cleared++;
+                    }
+                } else if (pageType === 'dagontvangsten') {
+                    const day = parseInt(input.getAttribute('data-day'));
+                    const btw = parseInt(input.getAttribute('data-btw'));
+                    if (day && btw) {
+                        updateDagontvangstBtwCell(day, btw, '');
+                        input.value = '';
+                        cleared++;
+                    }
+                } else if (pageType === 'gratis-cola') {
+                    const day = parseInt(input.getAttribute('data-day'));
+                    const month = parseInt(input.getAttribute('data-month'));
+                    const type = input.getAttribute('data-type');
+                    if (day && month && type) {
+                        updateGratisColaCell(day, month, type, '');
+                        input.value = '';
+                        cleared++;
+                    }
+                }
+            });
+
+            // Update totals if needed
+            if (pageType === 'uren-bulk') {
+                updateTotals();
+            } else if (pageType === 'dagontvangsten') {
+                updateDagontvangstenTotals();
+            } else if (pageType === 'gratis-cola') {
+                updateGratisColaTotals();
+            }
+
+            clearAllSelections();
+            alert(`✅ ${cleared} cel(len) gewist!`);
+        }
 
             // Initialize
             document.addEventListener('DOMContentLoaded', () => {
@@ -998,8 +1187,9 @@
             html += '<span style="background: #D9E1F2; padding: 2px 6px; margin: 0 5px;">S = School</span>';
             html += '<span style="margin-left: 10px;">Of voer gewoon uren in (bijv. 8, 7.5, etc.)</span>';
             html += '</div>';
-            
+
             document.getElementById('uren-bulk-list').innerHTML = html;
+            setTimeout(() => setupCellSelection(), 100);
         }
 
         // Helper function to handle input (uren or afwezigheid)
@@ -1446,7 +1636,7 @@
                 days.forEach(day => {
                     const value = kmBulkData[w.id][day] || '';
                     totaal += typeof value === 'number' ? value : 0;
-                    html += `<td><input type="number" value="${value}" style="width: 60px; padding: 4px;" onchange="kmBulkData['${w.id}'][${day}] = parseFloat(this.value) || ''"></td>`;
+                    html += `<td><input type="number" value="${value}" data-werknemer-id="${w.id}" data-day="${day}" style="width: 60px; padding: 4px;" onchange="kmBulkData['${w.id}'][${day}] = parseFloat(this.value) || ''"></td>`;
                 });
                 html += `<td><strong>${totaal.toFixed(1)}</strong></td>`;
                 html += `<td><strong>€${(totaal * 0.40).toFixed(2)}</strong></td></tr>`;
@@ -1454,6 +1644,25 @@
             
             html += '</tbody></table>';
             document.getElementById('kilometers-bulk-list').innerHTML = html;
+            setTimeout(() => setupCellSelection(), 100);
+        }
+
+        function updateKmBulkRowTotals(row, werknemerId) {
+            if (!row || !werknemerId) return;
+            const inputs = row.querySelectorAll('input[type="number"][data-werknemer-id]');
+            let totaal = 0;
+            inputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                totaal += value;
+            });
+            const totalCell = row.querySelector('td:nth-last-child(2)');
+            const costCell = row.querySelector('td:last-child');
+            if (totalCell) {
+                totalCell.innerHTML = `<strong>${totaal.toFixed(1)}</strong>`;
+            }
+            if (costCell) {
+                costCell.innerHTML = `<strong>€${(totaal * 0.40).toFixed(2)}</strong>`;
+            }
         }
 
         async function saveKmBulk() {
@@ -1896,8 +2105,9 @@
             html += '</tr>';
             
             html += '</tbody></table></div>';
-            
+
             document.getElementById('dagontvangsten-list').innerHTML = html;
+            setTimeout(() => setupCellSelection(), 100);
         }
 
         function updateDagontvangstBtwCell(day, btwPercentage, value) {
@@ -2497,6 +2707,7 @@
             // Calculate totals after table is rendered
             setTimeout(() => {
                 updateGratisColaTotals();
+                setupCellSelection();
             }, 100);
         }
 
