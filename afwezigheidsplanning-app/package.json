@@ -1,34 +1,75 @@
 {
-  "name": "afwezigheidsplanning-app",
-  "version": "0.1.0",
+  "name": "pita-pizza-napoli",
+  "version": "1.0.0",
   "private": true,
+  "main": "electron/main-simple.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "electron electron/main-simple.js",
+    "start:simple": "electron electron/main-simple.js",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win --x64",
+    "build:exe": "electron-builder --win --x64 --config.win.target=dir"
   },
   "dependencies": {
-    "@prisma/client": "^5.20.0",
-    "date-fns": "^4.1.0",
-    "jspdf": "^3.0.4",
-    "jspdf-autotable": "^5.0.2",
-    "lucide-react": "^0.562.0",
-    "next": "16.0.10",
-    "prisma": "^5.20.0",
-    "react": "19.2.1",
-    "react-dom": "19.2.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "dotenv": "^17.2.3",
-    "eslint": "^9",
-    "eslint-config-next": "16.0.10",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.pitapizzanapoli.app",
+    "productName": "Pita Pizza Napoli",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "app-simple/**/*",
+      "package.json",
+      "node_modules/xlsx/**/*",
+      "!electron/**/*.md",
+      "!electron/**/*.txt",
+      "!**/node_modules/**/*",
+      "!**/.git/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "app-simple",
+        "to": "app-simple",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/favicon.ico",
+      "sign": null,
+      "verifyUpdateCodeSignature": false
+    },
+    "compression": "maximum",
+    "removePackageScripts": true,
+    "asar": true,
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "public/favicon.ico",
+      "uninstallerIcon": "public/favicon.ico",
+      "installerHeaderIcon": "public/favicon.ico",
+      "shortcutName": "Pita Pizza Napoli"
+    },
+    "portable": {
+      "artifactName": "Pita-Pizza-Napoli-Portable.exe"
+    }
   }
 }

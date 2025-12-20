@@ -8,6 +8,7 @@ yarn-error.log*
 afwezigheidsplanning-app/.next/
 afwezigheidsplanning-app/out/
 afwezigheidsplanning-app/build/
+afwezigheidsplanning-app/dist/
 afwezigheidsplanning-app/.env*.local
 
 # Database
