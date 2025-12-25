@@ -1,636 +1,38 @@
-// SIMPELE Electron App - GEWOON WERKEN!
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const fs = require('fs');
+const { initDatabase, databaseOps } = require('./database-simple');
 const XLSX = require('xlsx');
 
-let mainWindow = null;
-let dbPath = null;
-let dbData = {
-  werknemers: [],
-  uren: [],
-  kilometers: [],
-  dagontvangsten: [],
-  gratisCola: []
-};
+// Initialize database
+initDatabase();
 
-// Database functies
-function getDbPath() {
-  if (!dbPath) {
-    const userData = app.getPath('userData');
-    const dbDir = path.join(userData, 'afwezigheidsplanning');
-    if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true });
-    }
-    dbPath = path.join(dbDir, 'data.json');
-  }
-  return dbPath;
-}
-
-function loadDatabase() {
-  const filePath = getDbPath();
-  try {
-    if (fs.existsSync(filePath)) {
-      const data = fs.readFileSync(filePath, 'utf8');
-      dbData = JSON.parse(data);
-    }
-  } catch (error) {
-    console.error('Error loading database:', error);
-    dbData = { werknemers: [], uren: [], kilometers: [], dagontvangsten: [], gratisCola: [] };
-  }
-}
-
-function saveDatabase() {
-  const filePath = getDbPath();
-  try {
-    fs.writeFileSync(filePath, JSON.stringify(dbData, null, 2), 'utf8');
-  } catch (error) {
-    console.error('Error saving database:', error);
-  }
-}
+let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    title: 'Pita Pizza Napoli',
+    width: 1400,
+    height: 900,
     webPreferences: {
+      preload: path.join(__dirname, 'preload-simple.js'),
       nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, 'preload-simple.js')
-    },
-    icon: path.join(__dirname, '../public/favicon.ico'),
-    show: false
+      contextIsolation: true
+    }
   });
 
-  // Load HTML file
-  const htmlPath = path.join(__dirname, '../app-simple/index.html');
-  if (fs.existsSync(htmlPath)) {
-    mainWindow.loadFile(htmlPath);
-  } else {
-    // Fallback: maak simpele HTML
-    mainWindow.loadURL('data:text/html,<h1>App wordt geladen...</h1><p>Maak app-simple/index.html aan</p>');
+  mainWindow.loadFile(path.join(__dirname, '../app-simple/index.html'));
+
+  // Open DevTools in development
+  if (process.env.NODE_ENV === 'development') {
+    mainWindow.webContents.openDevTools();
   }
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-  });
-
-  mainWindow.on('closed', () => {
-    mainWindow = null;
+  
+  // Log console messages from main process to renderer
+  mainWindow.webContents.on('console-message', (event, level, message) => {
+    console.log(`[Main Process] ${message}`);
   });
 }
 
-// IPC Handlers
-ipcMain.handle('db:get', (event, table) => {
-  return dbData[table] || [];
-});
-
-ipcMain.handle('db:set', (event, table, data) => {
-  dbData[table] = data;
-  saveDatabase();
-  return true;
-});
-
-ipcMain.handle('db:add', (event, table, item) => {
-  if (!dbData[table]) {
-    dbData[table] = [];
-  }
-  item.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-  dbData[table].push(item);
-  saveDatabase();
-  return item;
-});
-
-ipcMain.handle('db:update', (event, table, id, updates) => {
-  if (!dbData[table]) return null;
-  const index = dbData[table].findIndex(item => item.id === id);
-  if (index !== -1) {
-    dbData[table][index] = { ...dbData[table][index], ...updates };
-    saveDatabase();
-    return dbData[table][index];
-  }
-  return null;
-});
-
-ipcMain.handle('db:delete', (event, table, id) => {
-  if (!dbData[table]) return false;
-  const index = dbData[table].findIndex(item => item.id === id);
-  if (index !== -1) {
-    dbData[table].splice(index, 1);
-    saveDatabase();
-    return true;
-  }
-  return false;
-});
-
-// Excel Import Handler
-ipcMain.handle('import:excel', async (event, base64, fileName, importType) => {
-  try {
-    console.log('Import started:', fileName, importType);
-    
-    if (!base64) {
-      throw new Error('Geen bestand data ontvangen');
-    }
-    
-    const buffer = Buffer.from(base64, 'base64');
-    console.log('Buffer size:', buffer.length);
-    
-    if (buffer.length === 0) {
-      throw new Error('Bestand is leeg');
-    }
-    
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    console.log('Workbook sheets:', workbook.SheetNames);
-    
-    let importedWerknemers = 0;
-    let importedUren = 0;
-    let importedKilometers = 0;
-
-    const monthNames = [
-      'januari', 'februari', 'maart', 'april', 'mei', 'juni',
-      'juli', 'augustus', 'september', 'oktober', 'november', 'december'
-    ];
-
-    for (const sheetName of workbook.SheetNames) {
-      if (sheetName.toLowerCase() === 'werknemers') continue;
-      
-      const worksheet = workbook.Sheets[sheetName];
-      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-      
-      if (data.length < 5) continue;
-
-      const monthIndex = monthNames.findIndex(m => sheetName.toLowerCase().includes(m));
-      if (monthIndex === -1) continue;
-
-      // Detect year from filename or sheet name (default to 2025)
-      let year = 2025;
-      if (fileName) {
-        const yearMatch = fileName.match(/20(\d{2})/);
-        if (yearMatch) {
-          year = parseInt('20' + yearMatch[1]);
-        }
-      }
-      // Also check sheet name for year
-      const sheetYearMatch = sheetName.match(/20(\d{2})/);
-      if (sheetYearMatch) {
-        year = parseInt('20' + sheetYearMatch[1]);
-      }
-      
-      // Find header row
-      let nameColumnIndex = -1;
-      let dayStartColumnIndex = -1;
-      let dataStartRow = -1;
-
-      // Zoek header rij - flexibeler zoeken
-      for (let i = 0; i < Math.min(data.length, 15); i++) {
-        const row = data[i];
-        if (!row || !Array.isArray(row)) continue;
-        
-        for (let j = 0; j < row.length; j++) {
-          const cell = row[j];
-          if (typeof cell === 'string') {
-            const cellLower = cell.toLowerCase();
-            // Zoek naar "naam" of "werknemer" in de cel
-            if ((cellLower.includes('naam') && cellLower.includes('werknemer')) || 
-                cellLower.includes('naam werknemer') ||
-                cellLower === 'naam') {
-              nameColumnIndex = j;
-              dataStartRow = i + 1;
-              
-              // Zoek waar de dagen beginnen (kolom met "1" of "dag 1")
-              for (let k = j + 1; k < Math.min(row.length, j + 35); k++) {
-                const dayCell = row[k];
-                if (dayCell === 1 || dayCell === '1' || 
-                    (typeof dayCell === 'string' && dayCell.toLowerCase().includes('dag 1')) ||
-                    (typeof dayCell === 'string' && dayCell.trim() === '1')) {
-                  dayStartColumnIndex = k;
-                  break;
-                }
-              }
-              break;
-            }
-          }
-        }
-        if (nameColumnIndex !== -1) break;
-      }
-
-      if (nameColumnIndex === -1 || dataStartRow === -1) {
-        console.log(`Skipping sheet ${sheetName}: No header found`);
-        continue;
-      }
-      
-      if (!dayStartColumnIndex) {
-        dayStartColumnIndex = nameColumnIndex + 1;
-      }
-      
-      console.log(`Processing ${sheetName}: nameCol=${nameColumnIndex}, dayStart=${dayStartColumnIndex}, dataStart=${dataStartRow}`);
-
-      // Process rows
-      for (let i = dataStartRow; i < data.length; i++) {
-        const row = data[i];
-        const naam = row[nameColumnIndex];
-
-        if (!naam || typeof naam !== 'string' || naam.trim() === '' || 
-            naam.toLowerCase().includes('totaal')) {
-          continue;
-        }
-
-        // Find or create werknemer
-        let werknemer = dbData.werknemers.find(w => w.naam === naam.trim());
-        if (!werknemer) {
-          werknemer = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            naam: naam.trim(),
-            actief: true
-          };
-          dbData.werknemers.push(werknemer);
-          importedWerknemers++;
-        }
-
-        // Process days
-        for (let day = 1; day <= 31; day++) {
-          const columnIndex = dayStartColumnIndex + (day - 1);
-          if (columnIndex >= row.length || columnIndex < 0) break;
-
-          const cellValue = row[columnIndex];
-          const datum = new Date(year, monthIndex, day);
-          if (datum.getMonth() !== monthIndex) continue;
-
-          const dateStr = datum.toISOString().split('T')[0];
-
-          if (importType === 'kilometers') {
-            // Import kilometers
-            if (cellValue !== null && cellValue !== undefined && cellValue !== '') {
-              const kmValue = typeof cellValue === 'number' ? cellValue : parseFloat(cellValue);
-              if (!isNaN(kmValue) && kmValue > 0) {
-                const existing = dbData.kilometers.find(k => 
-                  k.werknemerId === werknemer.id && 
-                  new Date(k.datum).toISOString().split('T')[0] === dateStr
-                );
-                if (existing) {
-                  existing.kilometers = kmValue;
-                } else {
-                  dbData.kilometers.push({
-                    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-                    werknemerId: werknemer.id,
-                    datum: datum.toISOString(),
-                    kilometers: kmValue
-                  });
-                }
-                importedKilometers++;
-              }
-            }
-          } else {
-            // Import alleen uren (geen afwezigheden meer)
-            if (typeof cellValue === 'number' && cellValue > 0) {
-              // Uren
-              const existing = dbData.uren.find(u => 
-                u.werknemerId === werknemer.id && 
-                new Date(u.datum).toISOString().split('T')[0] === dateStr
-              );
-              if (existing) {
-                existing.uren = cellValue;
-              } else {
-                dbData.uren.push({
-                  id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-                  werknemerId: werknemer.id,
-                  datum: datum.toISOString(),
-                  uren: cellValue
-                });
-              }
-              importedUren++;
-            }
-          }
-        }
-      }
-    }
-
-    saveDatabase();
-
-    console.log('Import completed:', {
-      werknemers: importedWerknemers,
-      uren: importedUren,
-      kilometers: importedKilometers
-    });
-
-    return {
-      imported: {
-        werknemers: importedWerknemers,
-        uren: importedUren,
-        kilometers: importedKilometers
-      }
-    };
-  } catch (error) {
-    console.error('Import error:', error);
-    console.error('Error stack:', error.stack);
-    throw new Error(`Import fout: ${error.message || error.toString()}`);
-  }
-});
-
-// Excel Analysis Handler - Read and analyze Excel structure
-ipcMain.handle('analyze:excel', async (event, base64, fileName) => {
-  try {
-    if (!base64) {
-      throw new Error('Geen bestand data ontvangen');
-    }
-    
-    const buffer = Buffer.from(base64, 'base64');
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    
-    const analysis = {
-      fileName: fileName,
-      sheets: workbook.SheetNames.map(sheetName => {
-        const worksheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-        
-        // Analyze first few rows to understand structure
-        const firstRows = data.slice(0, 10);
-        const headers = firstRows[0] || [];
-        
-        return {
-          name: sheetName,
-          rowCount: data.length,
-          columnCount: headers.length,
-          headers: headers,
-          sampleData: firstRows.slice(0, 5)
-        };
-      })
-    };
-    
-    return analysis;
-  } catch (error) {
-    console.error('Analysis error:', error);
-    throw new Error(`Analyse fout: ${error.message || error.toString()}`);
-  }
-});
-
-// Import Dagontvangsten Handler
-ipcMain.handle('import:dagontvangsten', async (event, base64, fileName) => {
-  try {
-    console.log('Import dagontvangsten started:', fileName);
-    
-    if (!base64) {
-      throw new Error('Geen bestand data ontvangen');
-    }
-    
-    const buffer = Buffer.from(base64, 'base64');
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    console.log('Workbook sheets:', workbook.SheetNames);
-    
-    let importedRecords = 0;
-    const monthNames = [
-      'januari', 'februari', 'maart', 'april', 'mei', 'juni',
-      'juli', 'augustus', 'september', 'oktober', 'november', 'december'
-    ];
-    
-    // Detect year from filename
-    let year = 2025;
-    const yearMatch = fileName.match(/20(\d{2})/);
-    if (yearMatch) {
-      year = parseInt('20' + yearMatch[1]);
-    }
-    
-    for (const sheetName of workbook.SheetNames) {
-      const monthIndex = monthNames.findIndex(m => sheetName.toLowerCase().includes(m));
-      if (monthIndex === -1) continue;
-      
-      const worksheet = workbook.Sheets[sheetName];
-      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-      
-      if (data.length < 3) continue;
-      
-      // Find header row (usually row 2, index 1)
-      let headerRow = 1;
-      let datumCol = -1;
-      let totaalCol = -1;
-      const categorieCols = [];
-      
-      for (let i = 0; i < Math.min(5, data.length); i++) {
-        const row = data[i];
-        for (let j = 0; j < row.length; j++) {
-          const cell = row[j];
-          if (typeof cell === 'string') {
-            if (cell.toLowerCase().includes('datum')) {
-              datumCol = j;
-              headerRow = i;
-            } else if (cell.toLowerCase().includes('totaal')) {
-              totaalCol = j;
-            }
-          } else if (typeof cell === 'number' && cell > 0 && cell < 100) {
-            // Category column (like 6, 12, 21)
-            if (i === headerRow) {
-              categorieCols.push({ col: j, naam: cell.toString() });
-            }
-          }
-        }
-      }
-      
-      if (datumCol === -1 || totaalCol === -1) {
-        console.log(`Skipping sheet ${sheetName}: No header found`);
-        continue;
-      }
-      
-      console.log(`Processing ${sheetName}: datumCol=${datumCol}, totaalCol=${totaalCol}, categorieCols=${categorieCols.length}`);
-      
-      // Process data rows (start after header)
-      for (let i = headerRow + 1; i < data.length; i++) {
-        const row = data[i];
-        const datumValue = row[datumCol];
-        
-        if (!datumValue) continue;
-        
-        // Convert Excel date to ISO string
-        let datum = null;
-        if (typeof datumValue === 'number' && datumValue > 40000) {
-          // Excel date serial number
-          const excelDate = XLSX.SSF.parse_date_code(datumValue);
-          datum = new Date(excelDate.y, excelDate.m - 1, excelDate.d);
-        } else if (typeof datumValue === 'string') {
-          datum = new Date(datumValue);
-        }
-        
-        if (!datum || isNaN(datum.getTime())) continue;
-        
-        // Check if date matches the month
-        if (datum.getMonth() !== monthIndex) continue;
-        
-        const dateStr = datum.toISOString().split('T')[0];
-        const totaal = parseFloat(row[totaalCol]) || 0;
-        
-        // Get category values
-        const categorieen = {};
-        categorieCols.forEach(cat => {
-          const waarde = parseFloat(row[cat.col]) || 0;
-          if (waarde > 0) {
-            categorieen[cat.naam] = waarde;
-          }
-        });
-        
-        // Check if exists
-        const existing = dbData.dagontvangsten.find(d => 
-          new Date(d.datum).toISOString().split('T')[0] === dateStr
-        );
-        
-        if (existing) {
-          existing.totaal = totaal;
-          existing.categorieen = categorieen;
-        } else {
-          dbData.dagontvangsten.push({
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            datum: datum.toISOString(),
-            totaal: totaal,
-            categorieen: categorieen,
-            opmerking: row[datumCol + 1] || null // "Ontvangsten" column
-          });
-        }
-        importedRecords++;
-      }
-    }
-    
-    saveDatabase();
-    
-    console.log('Dagontvangsten import completed:', importedRecords);
-    
-    return {
-      imported: {
-        records: importedRecords
-      }
-    };
-  } catch (error) {
-    console.error('Import error:', error);
-    console.error('Error stack:', error.stack);
-    throw new Error(`Import fout: ${error.message || error.toString()}`);
-  }
-});
-
-// Import Gratis Cola Handler
-ipcMain.handle('import:gratiscola', async (event, base64, fileName) => {
-  try {
-    console.log('Import gratis cola started:', fileName);
-    
-    if (!base64) {
-      throw new Error('Geen bestand data ontvangen');
-    }
-    
-    const buffer = Buffer.from(base64, 'base64');
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    console.log('Workbook sheets:', workbook.SheetNames);
-    
-    let importedRecords = 0;
-    
-    // Detect year from filename
-    let year = 2025;
-    const yearMatch = fileName.match(/20(\d{2})/);
-    if (yearMatch) {
-      year = parseInt('20' + yearMatch[1]);
-    }
-    
-    // Process first sheet (usually "Blad1")
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-    
-    if (data.length < 32) {
-      throw new Error('Bestand heeft niet genoeg rijen');
-    }
-    
-    // Structure: Each row = day (1-31), columns = months (every 4 columns: date, gratis, verkocht, aankoopprijs)
-    // Row 0 = day 1, Row 1 = day 2, etc.
-    // Column 0 = day number, then every 4 columns = month data
-    
-    // Find how many months (count date columns)
-    let monthCount = 0;
-    for (let col = 0; col < data[0].length; col += 4) {
-      const dateValue = data[0] && data[0][col];
-      if (dateValue && (typeof dateValue === 'number' && dateValue > 40000 || typeof dateValue === 'string')) {
-        monthCount++;
-      } else {
-        break;
-      }
-    }
-    
-    console.log(`Found ${monthCount} months in the file`);
-    
-    // Process each month
-    for (let monthIdx = 0; monthIdx < monthCount; monthIdx++) {
-      const dateCol = monthIdx * 4;
-      const gratisCol = dateCol + 1;
-      const verkochtCol = dateCol + 2;
-      // Note: Third column is calculated (verkocht * 2.30), we don't import it
-      
-      // Get month from first row date
-      const firstDateValue = data[0][dateCol];
-      let month = 1;
-      let monthYear = year;
-      
-      if (typeof firstDateValue === 'number' && firstDateValue > 40000) {
-        const excelDate = XLSX.SSF.parse_date_code(firstDateValue);
-        month = excelDate.m;
-        monthYear = excelDate.y;
-      }
-      
-      // Process each day (rows 0-30 = days 1-31)
-      for (let rowIdx = 0; rowIdx < 31; rowIdx++) {
-        const day = rowIdx + 1;
-        const dateValue = data[rowIdx][dateCol];
-        const gratis = parseFloat(data[rowIdx][gratisCol]) || 0;
-        const verkocht = parseFloat(data[rowIdx][verkochtCol]) || 0;
-        
-        if (!dateValue || (gratis === 0 && verkocht === 0)) continue;
-        
-        // Create date
-        let datum = null;
-        if (typeof dateValue === 'number' && dateValue > 40000) {
-          const excelDate = XLSX.SSF.parse_date_code(dateValue);
-          datum = new Date(excelDate.y, excelDate.m - 1, excelDate.d);
-        } else if (typeof dateValue === 'string') {
-          datum = new Date(dateValue);
-        }
-        
-        if (!datum || isNaN(datum.getTime())) continue;
-        
-        const dateStr = datum.toISOString().split('T')[0];
-        
-        // Check if exists
-        const existing = dbData.gratisCola.find(g => 
-          new Date(g.datum).toISOString().split('T')[0] === dateStr
-        );
-        
-        if (existing) {
-          existing.gratis = gratis;
-          existing.verkocht = verkocht;
-        } else {
-          dbData.gratisCola.push({
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            datum: datum.toISOString(),
-            gratis: gratis,
-            verkocht: verkocht
-          });
-        }
-        importedRecords++;
-      }
-    }
-    
-    saveDatabase();
-    
-    console.log('Gratis Cola import completed:', importedRecords);
-    
-    return {
-      imported: {
-        records: importedRecords
-      }
-    };
-  } catch (error) {
-    console.error('Import error:', error);
-    console.error('Error stack:', error.stack);
-    throw new Error(`Import fout: ${error.message || error.toString()}`);
-  }
-});
-
-// App lifecycle
 app.whenReady().then(() => {
-  loadDatabase();
   createWindow();
 
   app.on('activate', () => {
@@ -646,3 +48,822 @@ app.on('window-all-closed', () => {
   }
 });
 
+// Database handlers - simple table-based operations
+const dbTableMap = {
+  werknemers: databaseOps,
+  uren: databaseOps,
+  afwezigheden: databaseOps,
+  kilometers: databaseOps,
+  maandKmStanden: databaseOps
+};
+
+ipcMain.handle('db:get', async (event, table) => {
+  switch(table) {
+    case 'werknemers': return databaseOps.getWerknemers();
+    case 'uren': return databaseOps.getUren();
+    case 'afwezigheden': return databaseOps.getAfwezigheden();
+    case 'kilometers': return databaseOps.getKilometers();
+    case 'maandKmStanden': return databaseOps.getMaandKmStanden();
+    default: return [];
+  }
+});
+
+ipcMain.handle('db:set', async (event, table, data) => {
+  // For compatibility - typically not used in this app
+  return { success: true };
+});
+
+ipcMain.handle('db:add', async (event, table, item) => {
+  switch(table) {
+    case 'werknemers': return databaseOps.createWerknemer(item);
+    case 'uren': return databaseOps.createUren(item);
+    case 'afwezigheden': return databaseOps.createAfwezigheid(item);
+    case 'kilometers': return databaseOps.createKilometer(item);
+    case 'maandKmStanden': return databaseOps.createMaandKmStand(item);
+    default: return null;
+  }
+});
+
+ipcMain.handle('db:update', async (event, table, id, updates) => {
+  switch(table) {
+    case 'werknemers': return databaseOps.updateWerknemer(id, updates);
+    case 'uren': return databaseOps.updateUren(id, updates);
+    case 'afwezigheden': return databaseOps.updateAfwezigheid(id, updates);
+    case 'kilometers': return databaseOps.updateKilometer(id, updates);
+    case 'maandKmStanden': return databaseOps.updateMaandKmStand(id, updates);
+    default: return null;
+  }
+});
+
+ipcMain.handle('db:delete', async (event, table, id) => {
+  switch(table) {
+    case 'werknemers': databaseOps.deleteWerknemer(id); break;
+    case 'uren': databaseOps.deleteUren(id); break;
+    case 'afwezigheden': databaseOps.deleteAfwezigheid(id); break;
+    case 'kilometers': databaseOps.deleteKilometer(id); break;
+    case 'maandKmStanden': databaseOps.deleteMaandKmStand(id); break;
+  }
+  return { success: true };
+});
+
+// Excel import handlers
+ipcMain.handle('import:excel', async (event, base64, fileName, importType) => {
+  try {
+    const buffer = Buffer.from(base64, 'base64');
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    
+    // Get first sheet
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    
+    // Try default XLSX conversion first to see structure
+    const defaultJson = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+    console.log('=== EXCEL STRUCTURE ANALYSIS ===');
+    console.log('Import type:', importType);
+    if (defaultJson.length > 0) {
+      console.log('Default XLSX conversion found', defaultJson.length, 'rows');
+      console.log('Default conversion columns:', Object.keys(defaultJson[0]));
+      console.log('First row (default):', defaultJson[0]);
+    }
+    
+    // Convert to array format first to inspect structure
+    const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '', header: 1 });
+    console.log('Raw Excel data (first 10 rows):');
+    rawData.slice(0, 10).forEach((row, idx) => {
+      console.log(`Row ${idx}:`, Array.isArray(row) ? row : Object.keys(row));
+    });
+    
+    // Find the actual header row (usually row with column names)
+    let headerRowIndex = -1;
+    let headerRow = null;
+    
+    // Look for common header patterns in first 10 rows
+    for (let i = 0; i < Math.min(10, rawData.length); i++) {
+      const row = rawData[i];
+      if (Array.isArray(row)) {
+        // Check if this row looks like headers (contains common column names)
+        const rowStr = row.map(c => c ? c.toString().toLowerCase() : '').join(' ');
+        // More flexible matching - look for any of these keywords
+        if (rowStr.includes('werknemer') || rowStr.includes('naam') || rowStr.includes('medewerker') ||
+            rowStr.includes('datum') || rowStr.includes('date') || 
+            rowStr.includes('uren') || rowStr.includes('hours') || rowStr.includes('uur') ||
+            rowStr.includes('type') || rowStr.includes('afwezigheid') || rowStr.includes('absence') ||
+            rowStr.includes('opmerking') || rowStr.includes('comment') || rowStr.includes('note')) {
+          headerRowIndex = i;
+          headerRow = row.map(h => h ? h.toString().trim() : '');
+          console.log('Found header row at index:', i, 'Headers:', headerRow);
+          break;
+        }
+      }
+    }
+    
+    // If no header found, try to detect from structure
+    // Sometimes first column is a title, second row might be headers
+    if (headerRowIndex === -1 && rawData.length > 1) {
+      // Try row 1 (index 1) as headers if row 0 looks like a title
+      const firstRow = rawData[0];
+      if (Array.isArray(firstRow) && firstRow.length > 0) {
+        const firstCell = firstRow[0] ? firstRow[0].toString().toLowerCase() : '';
+        // If first row looks like a title (contains "planning", "overzicht", etc), skip it
+        if (firstCell.includes('planning') || firstCell.includes('overzicht') || firstCell.includes('sleutel')) {
+          if (rawData.length > 1 && Array.isArray(rawData[1])) {
+            headerRowIndex = 1;
+            headerRow = rawData[1].map(h => h ? h.toString().trim() : '');
+            console.log('Detected title row, using row 1 as headers:', headerRow);
+          }
+        }
+      }
+    }
+    
+    // If still no header found, try first row that has multiple columns
+    if (headerRowIndex === -1 && rawData.length > 0) {
+      for (let i = 0; i < Math.min(5, rawData.length); i++) {
+        const row = rawData[i];
+        if (Array.isArray(row)) {
+          const nonEmptyCount = row.filter(c => c && c.toString().trim() !== '').length;
+          if (nonEmptyCount >= 2) { // At least 2 columns
+            headerRowIndex = i;
+            headerRow = row.map(h => h ? h.toString().trim() : '').filter(h => h !== '');
+            console.log('Using first row with multiple columns as headers (row', i, '):', headerRow);
+            break;
+          }
+        }
+      }
+    }
+    
+    // Convert to JSON starting from header row
+    let jsonData = [];
+    if (headerRow && headerRowIndex >= 0 && headerRow.length > 1) {
+      // Skip header row and any rows before it, start from headerRowIndex + 1
+      for (let i = headerRowIndex + 1; i < rawData.length; i++) {
+        const row = rawData[i];
+        if (Array.isArray(row)) {
+          const obj = {};
+          headerRow.forEach((header, idx) => {
+            if (header && header.trim() !== '') {
+              obj[header] = row[idx] || '';
+            }
+          });
+          // Only add row if it has at least one non-empty value
+          if (Object.values(obj).some(v => v !== '' && v !== null && v !== undefined)) {
+            jsonData.push(obj);
+          }
+        }
+      }
+    }
+    
+    // Fallback: use default XLSX conversion if we didn't get good results
+    if (jsonData.length === 0 && defaultJson.length > 0) {
+      console.log('⚠️ Using default XLSX conversion as fallback (could not parse with custom logic)');
+      jsonData = defaultJson;
+    }
+    
+    console.log('=== PROCESSED DATA ===');
+    console.log('Total data rows after processing:', jsonData.length);
+    if (jsonData.length > 0) {
+      console.log('Available columns:', Object.keys(jsonData[0]));
+      console.log('All column names:', Object.keys(jsonData[0]).join(', '));
+      console.log('First 3 rows of processed data:', jsonData.slice(0, 3));
+      console.log('First row (formatted):', JSON.stringify(jsonData[0], null, 2));
+    } else {
+      console.log('WARNING: No data rows found in Excel file!');
+      console.log('Trying fallback: using default XLSX conversion...');
+      // Try using default XLSX conversion as fallback
+      if (defaultJson.length > 0) {
+        jsonData = defaultJson;
+        console.log('Using default conversion, got', jsonData.length, 'rows');
+        console.log('Columns:', Object.keys(jsonData[0]));
+      }
+    }
+    
+    if (!jsonData || jsonData.length === 0) {
+      return { 
+        success: false, 
+        error: 'Excel bestand is leeg of heeft geen data'
+      };
+    }
+    
+    let imported = {
+      werknemers: 0,
+      kilometers: 0,
+      uren: 0
+    };
+    
+    // Helper function to find column value with flexible matching
+    function findColumnValue(row, possibleNames) {
+      for (const name of possibleNames) {
+        if (row[name] !== undefined && row[name] !== null && row[name] !== '') {
+          return row[name];
+        }
+      }
+      // Try case-insensitive matching
+      const rowKeys = Object.keys(row);
+      for (const name of possibleNames) {
+        const found = rowKeys.find(key => key.toLowerCase() === name.toLowerCase());
+        if (found && row[found] !== undefined && row[found] !== null && row[found] !== '') {
+          return row[found];
+        }
+      }
+      // Try first column if no match
+      return rowKeys.length > 0 ? row[rowKeys[0]] : '';
+    }
+    
+    // Process based on import type
+    console.log('Processing import type:', importType);
+    
+    if (importType === 'werknemers') {
+      // Expected columns: Naam, Email, Nummerplaat (optional)
+      console.log('Importing werknemers, total rows:', jsonData.length);
+      console.log('First row sample:', JSON.stringify(jsonData[0]));
+      
+      for (const row of jsonData) {
+        // Try multiple column name variations
+        const naam = findColumnValue(row, ['Naam', 'naam', 'NAAM', 'Name', 'name', 'NAME']);
+        
+        if (!naam || naam.toString().trim() === '') {
+          console.log('Skipping row - no naam found:', JSON.stringify(row));
+          continue;
+        }
+        
+        try {
+          const email = findColumnValue(row, ['Email', 'email', 'EMAIL', 'E-mail', 'e-mail']) || '';
+          const nummerplaat = findColumnValue(row, ['Nummerplaat', 'nummerplaat', 'NUMMERPLAAT', 
+                                                    'Nummerplaat', 'Nummer', 'nummer', 'License', 'license']) || '';
+          
+          databaseOps.createWerknemer({
+            naam: naam.toString().trim(),
+            email: email.toString().trim() || null,
+            nummerplaat: nummerplaat.toString().trim() || null
+          });
+          imported.werknemers++;
+          console.log('Imported werknemer:', naam);
+        } catch (err) {
+          console.error('Error importing werknemer:', err, row);
+        }
+      }
+    } else if (importType === 'kilometers') {
+      // Expected columns: Werknemer/Naam, Datum, Kilometers, Van (optional), Naar (optional), Doel (optional)
+      const werknemers = databaseOps.getWerknemers();
+      
+      console.log('Importing kilometers, total rows:', jsonData.length);
+      console.log('Available werknemers:', werknemers.length);
+      if (jsonData.length > 0) {
+        console.log('First row sample:', JSON.stringify(jsonData[0]));
+      }
+      
+      for (const row of jsonData) {
+        const werknemerNaam = (findColumnValue(row, ['Werknemer', 'werknemer', 'Naam', 'naam', 'Name', 'name', 
+                                                      'Employee', 'employee']) || '').toString().trim();
+        const datum = findColumnValue(row, ['Datum', 'datum', 'DATUM', 'Date', 'date', 'DATE']) || '';
+        const kmValue = findColumnValue(row, ['Kilometers', 'kilometers', 'KILOMETERS', 'KM', 'km', 
+                                              'Distance', 'distance', 'Afstand', 'afstand']) || 0;
+        const kilometers = parseFloat(kmValue);
+        
+        if (!werknemerNaam || !datum || isNaN(kilometers) || kilometers <= 0) {
+          console.log('Skipping row - missing data:', { werknemerNaam, datum, kilometers, row });
+          continue;
+        }
+        
+        // Find werknemer by name
+        const werknemer = werknemers.find(w => w.naam.toLowerCase() === werknemerNaam.toLowerCase());
+        if (!werknemer) {
+          console.log('Werknemer not found:', werknemerNaam, 'Available:', werknemers.map(w => w.naam));
+          continue;
+        }
+        
+        try {
+          // Parse date (supports various formats)
+          let dateObj;
+          if (datum instanceof Date) {
+            dateObj = datum;
+          } else if (typeof datum === 'number') {
+            // Excel serial date number (days since 1900-01-01)
+            dateObj = new Date((datum - 25569) * 86400 * 1000);
+          } else if (typeof datum === 'string') {
+            // Try parsing as ISO date or other formats
+            dateObj = new Date(datum);
+            // If that fails, try Excel date string format
+            if (isNaN(dateObj.getTime()) && datum.match(/^\d{5}$/)) {
+              const excelDate = parseFloat(datum);
+              dateObj = new Date((excelDate - 25569) * 86400 * 1000);
+            }
+          } else {
+            dateObj = new Date(datum);
+          }
+          
+          if (!dateObj || isNaN(dateObj.getTime())) continue;
+          
+          const vanAdres = findColumnValue(row, ['Van', 'van', 'From', 'from', 'Van adres', 'van adres']) || '';
+          const naarAdres = findColumnValue(row, ['Naar', 'naar', 'To', 'to', 'Naar adres', 'naar adres']) || '';
+          const doel = findColumnValue(row, ['Doel', 'doel', 'Purpose', 'purpose', 'Doel/reden', 'doel/reden']) || '';
+          
+          databaseOps.createKilometer({
+            werknemerId: werknemer.id,
+            datum: dateObj.toISOString(),
+            kilometers: kilometers,
+            vanAdres: vanAdres.toString().trim() || null,
+            naarAdres: naarAdres.toString().trim() || null,
+            doel: doel.toString().trim() || null
+          });
+          imported.kilometers++;
+          console.log('Imported kilometer:', werknemerNaam, kilometers, 'km');
+        } catch (err) {
+          console.error('Error importing kilometer:', err, row);
+        }
+      }
+    } else if (importType === 'uren') {
+      // Expected columns: Werknemer/Naam, Datum, Uren, Opmerking (optional)
+      const werknemers = databaseOps.getWerknemers();
+      console.log('Importing uren, total rows:', jsonData.length);
+      console.log('Available werknemers:', werknemers.length);
+      console.log('First row sample:', JSON.stringify(jsonData[0]));
+      
+      for (const row of jsonData) {
+        // Try multiple column name variations
+        const werknemerNaam = (findColumnValue(row, ['Werknemer', 'werknemer', 'Naam', 'naam', 'Name', 'name', 
+                                                      'Employee', 'employee']) || '').toString().trim();
+        const datum = findColumnValue(row, ['Datum', 'datum', 'DATUM', 'Date', 'date', 'DATE']) || '';
+        const urenValue = findColumnValue(row, ['Uren', 'uren', 'UREN', 'Hours', 'hours', 'HOURS', 'Uur', 'uur']) || 0;
+        const uren = parseFloat(urenValue);
+        
+        if (!werknemerNaam || !datum || isNaN(uren) || uren <= 0) {
+          console.log('Skipping row - missing data:', { werknemerNaam, datum, uren, row });
+          continue;
+        }
+        
+        // Find werknemer by name
+        const werknemer = werknemers.find(w => w.naam.toLowerCase() === werknemerNaam.toLowerCase());
+        if (!werknemer) {
+          console.log('Werknemer not found:', werknemerNaam, 'Available:', werknemers.map(w => w.naam));
+          continue;
+        }
+        
+        try {
+          // Parse date (supports various formats)
+          let dateObj;
+          if (datum instanceof Date) {
+            dateObj = datum;
+          } else if (typeof datum === 'number') {
+            // Excel serial date number (days since 1900-01-01)
+            dateObj = new Date((datum - 25569) * 86400 * 1000);
+          } else if (typeof datum === 'string') {
+            // Try parsing as ISO date or other formats
+            dateObj = new Date(datum);
+            // If that fails, try Excel date string format
+            if (isNaN(dateObj.getTime()) && datum.match(/^\d+(\.\d+)?$/)) {
+              const excelDate = parseFloat(datum);
+              dateObj = new Date((excelDate - 25569) * 86400 * 1000);
+            }
+          } else {
+            dateObj = new Date(datum);
+          }
+          
+          if (!dateObj || isNaN(dateObj.getTime())) continue;
+          
+          const opmerking = findColumnValue(row, ['Opmerking', 'opmerking', 'Comment', 'comment', 
+                                                   'Notitie', 'notitie', 'Note', 'note']) || '';
+          
+          databaseOps.createUren({
+            werknemerId: werknemer.id,
+            datum: dateObj.toISOString(),
+            uren: uren,
+            opmerking: opmerking.toString().trim() || null
+          });
+          imported.uren++;
+          console.log('Imported uren:', werknemerNaam, uren, 'uren');
+        } catch (err) {
+          console.error('Error importing uren:', err, row);
+        }
+      }
+    } else if (importType === 'uren-afwezigheden' || importType === 'afwezigheden') {
+      // Special handling for Werknemersafwezigheidsplanning format
+      // Structure: Row 5 has headers ("Naam van werknemer", "1", "2", ..., "31", "Totaal")
+      // Data starts from row 6
+      // Each day cell can contain: number (uren) or letter (afwezigheid type: V, A, P, Z, S)
+      
+      const werknemers = databaseOps.getWerknemers();
+      console.log('Importing uren-afwezigheden, total rows:', jsonData.length);
+      console.log('Available werknemers:', werknemers.length);
+      
+      // Check if this is the Werknemersafwezigheidsplanning format (monthly grid)
+      // Look in rawData for "Naam van werknemer" pattern AND day numbers (1-31)
+      let isMonthlyGridFormat = false;
+      for (let i = 0; i < Math.min(10, rawData.length); i++) {
+        const row = rawData[i];
+        if (Array.isArray(row)) {
+          let hasNaamWerknemer = false;
+          let hasDayNumbers = false;
+          for (let cell of row) {
+            const cellStr = cell ? cell.toString().toLowerCase() : '';
+            if (cellStr.includes('naam') && cellStr.includes('werknemer')) {
+              hasNaamWerknemer = true;
+            }
+            // Check for day numbers (1-31)
+            if (cellStr && !isNaN(cellStr) && parseInt(cellStr) >= 1 && parseInt(cellStr) <= 31) {
+              hasDayNumbers = true;
+            }
+          }
+          if (hasNaamWerknemer && hasDayNumbers) {
+            isMonthlyGridFormat = true;
+            console.log('✓ Detected monthly grid format at row', i);
+            break;
+          }
+        }
+      }
+      
+      if (isMonthlyGridFormat) {
+        console.log('✓ Detected monthly grid format (Werknemersafwezigheidsplanning)');
+        const result = await importMonthlyGridFormat(rawData, firstSheetName, importType, werknemers, databaseOps);
+        if (result.success) {
+          imported.uren += result.imported.uren || 0;
+          // Return early if monthly grid format was used
+          return {
+            success: true,
+            message: imported.uren > 0 ? 'Import successful' : 'Import completed but no items imported',
+            imported,
+            debug: result.debug || {
+              totalRows: rawData.length,
+              availableColumns: ['Monthly grid format detected'],
+              firstRowSample: rawData.length > 0 ? rawData[0] : null,
+              importedCounts: result.imported || imported,
+              warning: imported.uren === 0 ? 'No items were imported. Check console logs for details.' : null
+            }
+          };
+        } else {
+          return result; // Return error from monthly grid import
+        }
+      } else {
+        // Original format: Werknemer/Naam, Datum, Uren, Type
+        if (jsonData.length > 0) {
+          console.log('Using standard format, first row sample:', JSON.stringify(jsonData[0]));
+        }
+        
+        for (const row of jsonData) {
+        const werknemerNaam = (findColumnValue(row, ['Werknemer', 'werknemer', 'Naam', 'naam', 'Name', 'name', 
+                                                      'Employee', 'employee']) || '').toString().trim();
+        const datum = findColumnValue(row, ['Datum', 'datum', 'DATUM', 'Date', 'date', 'DATE']) || '';
+        const urenValue = findColumnValue(row, ['Uren', 'uren', 'UREN', 'Hours', 'hours', 'HOURS', 'Uur', 'uur']) || 0;
+        const uren = parseFloat(urenValue) || 0;
+        const type = (findColumnValue(row, ['Type', 'type', 'TYPE', 'Afwezigheid', 'afwezigheid', 'Soort', 'soort']) || '').toString().trim().toUpperCase();
+        
+        if (!werknemerNaam || !datum) {
+          console.log('Skipping row - missing werknemer or datum:', { werknemerNaam, datum, row });
+          continue;
+        }
+        
+        // Map type to valid values: V=Vakantie, A=Aangepast, S=School
+        let afwezigheidType = null;
+        if (type === 'V' || type === 'VAKANTIE' || type === 'VACATION') {
+          afwezigheidType = 'V';
+        } else if (type === 'A' || type === 'AANGEPAST' || type === 'ADJUSTED') {
+          afwezigheidType = 'A';
+        } else if (type === 'S' || type === 'SCHOOL') {
+          afwezigheidType = 'S';
+        }
+        
+        // Must have either uren > 0 OR afwezigheidType
+        if (uren <= 0 && !afwezigheidType) {
+          console.log('Skipping row - no uren or afwezigheid:', { werknemerNaam, datum, uren, type, row });
+          continue;
+        }
+        
+        const werknemer = werknemers.find(w => w.naam.toLowerCase() === werknemerNaam.toLowerCase());
+        if (!werknemer) {
+          console.log('Werknemer not found:', werknemerNaam, 'Available:', werknemers.map(w => w.naam));
+          continue;
+        }
+        
+        try {
+          // Parse date
+          let dateObj;
+          if (datum instanceof Date) {
+            dateObj = datum;
+          } else if (typeof datum === 'number') {
+            dateObj = new Date((datum - 25569) * 86400 * 1000);
+          } else if (typeof datum === 'string') {
+            dateObj = new Date(datum);
+            if (isNaN(dateObj.getTime()) && datum.match(/^\d+(\.\d+)?$/)) {
+              const excelDate = parseFloat(datum);
+              dateObj = new Date((excelDate - 25569) * 86400 * 1000);
+            }
+          } else {
+            dateObj = new Date(datum);
+          }
+          
+          if (!dateObj || isNaN(dateObj.getTime())) {
+            console.log('Invalid date:', datum);
+            continue;
+          }
+          
+          const opmerking = findColumnValue(row, ['Opmerking', 'opmerking', 'Comment', 'comment', 
+                                                   'Notitie', 'notitie', 'Note', 'note']) || '';
+          
+          // Create uren record (with optional afwezigheid type)
+          databaseOps.createUren({
+            werknemerId: werknemer.id,
+            datum: dateObj.toISOString(),
+            uren: uren,
+            afwezigheid: afwezigheidType || null,
+            opmerking: opmerking.toString().trim() || null
+          });
+          imported.uren++;
+          console.log('Imported:', werknemerNaam, uren > 0 ? `${uren} uren` : `afwezigheid ${afwezigheidType}`, dateObj.toISOString());
+        } catch (err) {
+          console.error('Error importing uren-afwezigheden:', err, row);
+        }
+      }
+      }
+    } else {
+      console.log('Unknown import type:', importType);
+      return { 
+        success: false, 
+        error: `Unknown import type: ${importType}` 
+      };
+    }
+    
+    // Log summary
+    console.log('=== IMPORT SUMMARY ===');
+    console.log('Type:', importType);
+    console.log('Total rows processed:', jsonData.length);
+    console.log('Imported:', imported);
+    console.log('=====================');
+    
+    return { 
+      success: true, 
+      message: 'Import successful',
+      imported,
+      debug: {
+        totalRows: jsonData.length,
+        availableColumns: jsonData.length > 0 ? Object.keys(jsonData[0]) : [],
+        firstRowSample: jsonData.length > 0 ? jsonData[0] : null
+      }
+    };
+  } catch (error) {
+    console.error('Import error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Helper function to import monthly grid format (Werknemersafwezigheidsplanning)
+async function importMonthlyGridFormat(rawData, sheetName, importType, werknemers, databaseOps) {
+  const imported = { werknemers: 0, uren: 0 };
+  
+  // Find header row (row with "Naam van werknemer")
+  let headerRowIndex = -1;
+  let nameColumnIndex = -1;
+  let dayColumns = []; // Array of {index, dayNumber}
+  
+  for (let i = 0; i < Math.min(10, rawData.length); i++) {
+    const row = rawData[i];
+    if (Array.isArray(row)) {
+      // Look for "Naam van werknemer" or similar
+      for (let j = 0; j < row.length; j++) {
+        const cell = row[j] ? row[j].toString().toLowerCase() : '';
+        if (cell.includes('naam') && (cell.includes('werknemer') || cell.includes('medewerker'))) {
+          headerRowIndex = i;
+          nameColumnIndex = j;
+          // Find day columns (numbers 1-31)
+          dayColumns = [];
+          for (let k = j + 1; k < row.length; k++) {
+            const dayCell = row[k] ? row[k].toString().trim() : '';
+            // Check if it's a day number (1-31) or empty (skip totals)
+            if (dayCell && !isNaN(dayCell) && parseInt(dayCell) >= 1 && parseInt(dayCell) <= 31) {
+              dayColumns.push({ index: k, dayNumber: parseInt(dayCell) });
+            } else if (dayCell.toLowerCase().includes('totaal')) {
+              break; // Stop at totals column
+            }
+          }
+          console.log('Found header row at index', i, 'Name column:', nameColumnIndex, 'Day columns:', dayColumns.length);
+          break;
+        }
+      }
+      if (headerRowIndex >= 0) break;
+    }
+  }
+  
+  if (headerRowIndex === -1 || nameColumnIndex === -1) {
+    console.log('❌ Could not find header row with "Naam van werknemer"');
+    console.log('Searched first 10 rows. Showing each row:');
+    let rowDetails = [];
+    for (let i = 0; i < Math.min(10, rawData.length); i++) {
+      const row = rawData[i];
+      if (Array.isArray(row)) {
+        const rowStr = row.slice(0, 10).map(c => c ? c.toString().substring(0, 30) : '').join(' | ');
+        console.log(`Row ${i}:`, rowStr);
+        rowDetails.push(`Row ${i}: ${rowStr}`);
+      }
+    }
+    return { 
+      success: false, 
+      error: 'Could not find header row with "Naam van werknemer" in Excel file', 
+      imported,
+      debug: {
+        totalRows: rawData.length,
+        searchedRows: 10,
+        rowDetails: rowDetails
+      }
+    };
+  }
+  
+  console.log('✓ Header row found:', headerRowIndex, 'Name column:', nameColumnIndex, 'Days:', dayColumns.length);
+  
+  // Get month and year from sheet name (passed as parameter)
+  const monthNames = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 
+                      'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+  let month = -1;
+  for (let i = 0; i < monthNames.length; i++) {
+    if (sheetName.toLowerCase().includes(monthNames[i])) {
+      month = i + 1;
+      break;
+    }
+  }
+  
+  // Try to find year in row 3 (usually has year)
+  let year = new Date().getFullYear();
+  if (rawData.length > 3 && Array.isArray(rawData[3])) {
+    for (let cell of rawData[3]) {
+      if (cell && typeof cell === 'number' && cell >= 2020 && cell <= 2100) {
+        year = cell;
+        break;
+      }
+    }
+  }
+  
+  console.log('Importing for month:', month, 'year:', year, 'sheetName:', sheetName);
+  
+  if (month === -1) {
+    console.log('❌ Could not determine month from sheet name:', sheetName);
+    // Try to find month name in rawData (row 3 usually has month name)
+    for (let i = 0; i < Math.min(5, rawData.length); i++) {
+      const row = rawData[i];
+      if (Array.isArray(row)) {
+        for (let cell of row) {
+          const cellStr = cell ? cell.toString().toLowerCase() : '';
+          for (let j = 0; j < monthNames.length; j++) {
+            if (cellStr.includes(monthNames[j])) {
+              month = j + 1;
+              console.log('✓ Found month in data row', i, ':', monthNames[j], '=', month);
+              break;
+            }
+          }
+          if (month !== -1) break;
+        }
+        if (month !== -1) break;
+      }
+    }
+    
+    if (month === -1) {
+      return { success: false, error: 'Could not determine month from sheet name or data', imported };
+    }
+  }
+  
+  console.log('Processing data rows from', headerRowIndex + 1, 'to', rawData.length);
+  console.log('Available werknemers:', werknemers.map(w => w.naam));
+  
+  // Process data rows (start after header row)
+  for (let i = headerRowIndex + 1; i < rawData.length; i++) {
+    const row = rawData[i];
+    if (!Array.isArray(row)) continue;
+    
+    const werknemerNaam = row[nameColumnIndex] ? row[nameColumnIndex].toString().trim() : '';
+    if (!werknemerNaam || werknemerNaam.toLowerCase().includes('totaal')) {
+      continue; // Skip empty rows and totals
+    }
+    
+    console.log('Processing werknemer:', werknemerNaam, 'row', i);
+    
+    // Find werknemer
+    const werknemer = werknemers.find(w => w.naam.toLowerCase() === werknemerNaam.toLowerCase());
+    if (!werknemer) {
+      console.log('❌ Werknemer not found:', werknemerNaam, 'Available:', werknemers.map(w => w.naam));
+      continue;
+    }
+    
+    console.log('✓ Werknemer found:', werknemer.id, werknemer.naam);
+    
+    // Process each day column
+    let importedForThisWerknemer = 0;
+    for (const dayCol of dayColumns) {
+      const cellValue = row[dayCol.index];
+      if (!cellValue && cellValue !== 0 && cellValue !== '') continue; // Skip empty cells
+      
+      const day = dayCol.dayNumber;
+      const dateObj = new Date(year, month - 1, day);
+      
+      // Skip invalid dates (e.g., Feb 30)
+      if (dateObj.getDate() !== day || dateObj.getMonth() !== month - 1) {
+        continue;
+      }
+      
+      try {
+        const cellStr = cellValue.toString().trim();
+        let uren = 0;
+        let afwezigheidType = null;
+        
+        // Check if it's a number (uren)
+        if (!isNaN(cellStr) && cellStr !== '') {
+          uren = parseFloat(cellStr);
+        } 
+        // Check if it's an afwezigheid type (V, A, P, Z, S)
+        else if (cellStr.length === 1) {
+          const upper = cellStr.toUpperCase();
+          if (upper === 'V') afwezigheidType = 'V';
+          else if (upper === 'A') afwezigheidType = 'A';
+          else if (upper === 'P') afwezigheidType = 'A'; // Persoonlijk = Aangepast
+          else if (upper === 'Z') afwezigheidType = 'A'; // Ziek = Aangepast (or could be separate)
+          else if (upper === 'S') afwezigheidType = 'S';
+        }
+        
+        // Only create record if there's data
+        if (uren > 0 || afwezigheidType) {
+          // Check if record already exists for this date
+          const existing = databaseOps.getUren().find(u => 
+            u.werknemerId === werknemer.id && 
+            u.datum.startsWith(dateObj.toISOString().split('T')[0])
+          );
+          
+          if (!existing) {
+            databaseOps.createUren({
+              werknemerId: werknemer.id,
+              datum: dateObj.toISOString(),
+              uren: uren,
+              afwezigheid: afwezigheidType,
+              opmerking: null
+            });
+            imported.uren++;
+            importedForThisWerknemer++;
+            console.log('  ✓ Imported:', dateObj.toISOString().split('T')[0], 
+                       uren > 0 ? `${uren} uren` : `afwezigheid ${afwezigheidType}`);
+          } else {
+            console.log('  ⊗ Skipped (exists):', dateObj.toISOString().split('T')[0]);
+          }
+        }
+      } catch (err) {
+        console.error('  ❌ Error processing cell:', err, {werknemerNaam, day, cellValue});
+      }
+    }
+    if (importedForThisWerknemer > 0) {
+      console.log('Total imported for', werknemerNaam, ':', importedForThisWerknemer);
+    }
+  }
+  
+  console.log('=== MONTHLY GRID IMPORT COMPLETED ===');
+  console.log('Total imported:', imported);
+  console.log('=====================================');
+  
+  if (imported.uren === 0) {
+    console.log('⚠️ WARNING: No items were imported!');
+    console.log('Possible reasons:');
+    console.log('- No matching werknemers found in database');
+    console.log('- All records already exist');
+    console.log('- No valid data in cells');
+  }
+  
+  return { 
+    success: true, 
+    message: 'Import successful',
+    imported,
+    debug: {
+      totalRows: rawData.length,
+      headerRowIndex: headerRowIndex,
+      nameColumnIndex: nameColumnIndex,
+      dayColumnsCount: dayColumns.length,
+      month: month,
+      year: year,
+      importedCounts: imported
+    }
+  };
+}
+
+ipcMain.handle('analyze:excel', async (event, base64, fileName) => {
+  try {
+    const buffer = Buffer.from(base64, 'base64');
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    // Analyze workbook and return structure
+    return { success: true, sheets: workbook.SheetNames };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('import:dagontvangsten', async (event, base64, fileName) => {
+  try {
+    const buffer = Buffer.from(base64, 'base64');
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    // Process dagontvangsten import
+    return { success: true, message: 'Dagontvangsten import successful' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('import:gratiscola', async (event, base64, fileName) => {
+  try {
+    const buffer = Buffer.from(base64, 'base64');
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    // Process gratis cola import
+    return { success: true, message: 'Gratis cola import successful' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});

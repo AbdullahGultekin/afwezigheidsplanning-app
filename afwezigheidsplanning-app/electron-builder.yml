@@ -1,0 +1,21 @@
+appId: com.pitapizza.afwezigheidsplanning
+productName: Pita Pizza Napoli
+directories:
+  output: dist
+  buildResources: build
+files:
+  - 'electron/**/*'
+  - 'app-simple/**/*'
+  - 'package.json'
+  - '!node_modules/**/*'
+  - 'node_modules/xlsx/**/*'
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  artifactName: '${productName}-Portable-${version}.${ext}'
+  verifyUpdateCodeSignature: false
+  forceCodeSigning: false
+  signAndEditExecutable: false
+

@@ -1,3014 +1,6205 @@
 <!DOCTYPE html>
+
 <html lang="nl">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Pita Pizza Napoli</title>
+
     <style>
+
         * {
+
             margin: 0;
+
             padding: 0;
+
             box-sizing: border-box;
+
         }
+
         body {
+
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
             background: #f5f5f5;
+
             padding: 20px;
+
         }
+
         .container {
+
             max-width: 1400px;
+
             margin: 0 auto;
+
             background: white;
+
             border-radius: 8px;
+
             padding: 20px;
+
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
         }
+
         h1 {
+
             color: #333;
+
             margin-bottom: 20px;
+
         }
+
         h2 {
+
             color: #555;
+
             margin-bottom: 15px;
+
         }
+
         .nav {
+
             display: flex;
+
             gap: 10px;
+
             margin-bottom: 20px;
+
             border-bottom: 2px solid #eee;
+
             padding-bottom: 10px;
+
             flex-wrap: wrap;
+
         }
+
         .nav button {
+
             padding: 10px 20px;
+
             border: none;
+
             background: #007bff;
+
             color: white;
+
             border-radius: 4px;
+
             cursor: pointer;
+
             font-size: 14px;
+
         }
+
         .nav button:hover {
+
             background: #0056b3;
+
         }
+
         .nav button.active {
+
             background: #0056b3;
+
         }
+
         .content {
+
             display: none;
+
         }
+
         .content.active {
+
             display: block;
+
         }
+
         table {
+
             width: 100%;
+
             border-collapse: collapse;
+
             margin-top: 20px;
+
         }
+
         th, td {
+
             padding: 12px;
+
             text-align: left;
+
             border-bottom: 1px solid #ddd;
+
         }
+
         th {
+
             background: #f8f9fa;
+
             font-weight: 600;
+
         }
+
         .btn {
+
             padding: 8px 16px;
+
             border: none;
+
             border-radius: 4px;
+
             cursor: pointer;
+
             font-size: 14px;
+
             margin-right: 5px;
+
         }
+
         .btn-primary {
+
             background: #007bff;
+
             color: white;
+
         }
+
         .btn-danger {
+
             background: #dc3545;
+
             color: white;
+
         }
+
         .btn-success {
+
             background: #28a745;
+
             color: white;
+
         }
+
         .btn:hover {
+
             opacity: 0.9;
+
         }
+
         .form-group {
+
             margin-bottom: 15px;
+
         }
+
         label {
+
             display: block;
+
             margin-bottom: 5px;
+
             font-weight: 500;
+
         }
+
         input, select, textarea {
+
             width: 100%;
+
             padding: 8px;
+
             border: 1px solid #ddd;
+
             border-radius: 4px;
+
             font-size: 14px;
+
         }
+
         .form-row {
+
             display: grid;
+
             grid-template-columns: 1fr 1fr;
+
             gap: 15px;
+
         }
+
         .alert {
+
             padding: 12px;
+
             border-radius: 4px;
+
             margin-bottom: 20px;
+
         }
+
         .alert-success {
+
             background: #d4edda;
+
             color: #155724;
+
             border: 1px solid #c3e6cb;
+
         }
+
         .alert-info {
+
             background: #d1ecf1;
+
             color: #0c5460;
+
             border: 1px solid #bee5eb;
+
         }
+
         .modal {
+
             display: none;
+
             position: fixed;
+
             top: 0;
+
             left: 0;
+
             width: 100%;
+
             height: 100%;
+
             background: rgba(0,0,0,0.5);
+
             z-index: 1000;
+
         }
+
         .modal.active {
+
             display: flex;
+
             align-items: center;
+
             justify-content: center;
+
         }
+
         .modal-content {
+
             background: white;
+
             padding: 30px;
+
             border-radius: 8px;
+
             max-width: 600px;
+
             width: 90%;
+
             max-height: 90vh;
+
             overflow-y: auto;
+
         }
+
         .badge {
+
             display: inline-block;
+
             padding: 4px 8px;
+
             border-radius: 4px;
+
             font-size: 12px;
+
             font-weight: 600;
+
         }
+
         .badge-vakantie { background: #cfe2ff; color: #084298; }
+
         .badge-ziek { background: #f8d7da; color: #842029; }
+
         .badge-persoonlijk { background: #e2d9f3; color: #5f3c87; }
+
         .calendar-grid {
+
             display: grid;
+
             grid-template-columns: repeat(7, 1fr);
+
             gap: 5px;
+
             margin-top: 20px;
+
         }
+
         .calendar-day {
+
             padding: 10px;
+
             border: 1px solid #ddd;
+
             border-radius: 4px;
+
             text-align: center;
+
             cursor: pointer;
+
             min-height: 60px;
+
         }
+
         .calendar-day:hover {
+
             background: #f0f0f0;
+
         }
+
         .calendar-day.selected {
+
             background: #007bff;
+
             color: white;
+
         }
+
         .calendar-day.has-data {
+
             background: #e7f3ff;
+
         }
+
         .filter-bar {
+
             display: flex;
+
             gap: 15px;
+
             margin-bottom: 20px;
+
             align-items: center;
+
             flex-wrap: wrap;
+
         }
+
         .cell-selected {
+
             outline: 3px solid #007bff !important;
+
             outline-offset: -2px;
+
             background-color: #e7f3ff !important;
+
             position: relative;
+
         }
+
         .cell-selected::after {
+
             content: '';
+
             position: absolute;
+
             top: 0;
+
             left: 0;
+
             right: 0;
+
             bottom: 0;
+
             border: 2px solid #007bff;
+
             pointer-events: none;
+
         }
+
         .btn-warning {
+
             background: #ffc107;
+
             color: #000;
+
         }
+
         .btn-warning:hover {
+
             background: #e0a800;
+
         }
+
         .empty-state {
+
             text-align: center;
+
             padding: 40px;
+
             color: #999;
+
         }
+
     </style>
+
 </head>
+
 <body>
+
     <div class="container">
-        <h1>🍕 Pita Pizza Napoli</h1>
+
+        <h1>Pita Pizza Napoli</h1>
+
         
+
         <div class="nav">
-            <button onclick="showPage('werknemers')" class="active">👥 Werknemers</button>
-            <button onclick="showPage('uren')">⏰ Uren</button>
-            <button onclick="showPage('uren-bulk')">📊 Uren Maandoverzicht</button>
-            <button onclick="showPage('kilometers')">🚗 Kilometers</button>
-            <button onclick="showPage('kilometers-bulk')">📊 Kilometers Maandoverzicht</button>
-            <button onclick="showPage('dagontvangsten')">💰 Dagontvangsten</button>
-            <button onclick="showPage('gratis-cola')">🥤 Gratis Cola</button>
-            <button onclick="showPage('import')">📥 Import Excel</button>
+
+            <button onclick="showPage('werknemers')" class="active">Werknemers</button>
+
+            <button onclick="showPage('uren')">Uren</button>
+
+            <button onclick="showPage('uren-bulk')">Uren Maandoverzicht</button>
+
+            <button onclick="showPage('kilometers')">Kilometers</button>
+
+            <button onclick="showPage('kilometers-bulk')">Kilometers Maandoverzicht</button>
+
+            <button onclick="showPage('dagontvangsten')">Dagontvangsten</button>
+
+            <button onclick="showPage('gratis-cola')">Gratis Cola</button>
+
+            <button onclick="showPage('import')">Import Excel</button>
+
         </div>
+
+
 
         <!-- Werknemers -->
+
         <div id="werknemers" class="content active">
+
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+
                 <h2>Werknemers</h2>
+
                 <button class="btn btn-primary" onclick="showWerknemerForm()">+ Werknemer Toevoegen</button>
+
             </div>
+
             <div id="werknemers-list"></div>
+
         </div>
+
+
 
         <!-- Uren -->
+
         <div id="uren" class="content">
+
             <h2>Urenregistratie</h2>
+
             <div class="filter-bar">
+
                 <div class="form-group" style="margin: 0; min-width: 200px;">
+
                     <label>Werknemer</label>
+
                     <select id="uren-werknemer" onchange="loadUren()">
+
                         <option value="">-- Selecteer werknemer --</option>
+
                     </select>
+
                 </div>
+
                 <div class="form-group" style="margin: 0; min-width: 150px;">
+
                     <label>Maand</label>
+
                     <input type="month" id="uren-maand" onchange="loadUren()" value="">
+
                 </div>
+
                 <button class="btn btn-primary" onclick="showUrenForm()">+ Uren Toevoegen</button>
+
             </div>
+
             <div id="uren-list"></div>
+
         </div>
+
+
 
         <!-- Afwezigheden -->
+
         <div id="afwezigheden" class="content">
+
             <h2>Afwezigheden</h2>
+
             <div class="empty-state">
+
                 <p>Deze pagina is niet beschikbaar.</p>
+
             </div>
+
         </div>
+
+
 
         <!-- Kilometers -->
+
         <div id="kilometers" class="content">
+
             <h2>Kilometers</h2>
+
             <div class="filter-bar">
+
                 <div class="form-group" style="margin: 0; min-width: 200px;">
+
                     <label>Werknemer</label>
+
                     <select id="kilometers-werknemer" onchange="loadKilometers()">
+
                         <option value="">-- Selecteer werknemer --</option>
+
                     </select>
+
                 </div>
+
                 <div class="form-group" style="margin: 0; min-width: 150px;">
+
                     <label>Maand</label>
+
                     <input type="month" id="kilometers-maand" onchange="loadKilometers()" value="">
+
                 </div>
+
                 <button class="btn btn-primary" onclick="showKilometerForm()">+ Kilometers Toevoegen</button>
+
             </div>
+
             <div id="kilometers-list"></div>
+
         </div>
+
+
 
         <!-- Uren Maandoverzicht -->
+
         <div id="uren-bulk" class="content">
+
             <h2>Uren Maandoverzicht (Excel-stijl)</h2>
+
             <div class="filter-bar">
+
                 <div class="form-group" style="margin: 0; min-width: 150px;">
+
                     <label>Maand</label>
+
                     <input type="month" id="uren-bulk-maand" onchange="loadUrenBulk()" value="">
+
                 </div>
-                <button class="btn btn-success" onclick="saveUrenBulk()">💾 Alle Uren Opslaan</button>
-                <button class="btn btn-warning" onclick="clearSelectedCells('uren-bulk')" title="Wis geselecteerde cellen">🗑️ Wis Geselecteerde Cellen</button>
+
+                <button class="btn btn-success" onclick="saveUrenBulk()">Alle Uren Opslaan</button>
+
+                <button class="btn btn-warning" onclick="clearSelectedCells('uren-bulk')" title="Wis geselecteerde cellen">Wis Geselecteerde Cellen</button>
+
             </div>
+
             <div id="uren-bulk-list" style="overflow-x: auto;"></div>
+
         </div>
+
+
 
         <!-- Kilometers Maandoverzicht -->
+
         <div id="kilometers-bulk" class="content">
+
             <h2>Kilometers Maandoverzicht (Excel-stijl)</h2>
+
             <div class="filter-bar">
+
                 <div class="form-group" style="margin: 0; min-width: 150px;">
+
                     <label>Maand</label>
+
                     <input type="month" id="km-bulk-maand" onchange="loadKmBulk()" value="">
+
                 </div>
-                <button class="btn btn-success" onclick="saveKmBulk()">💾 Alle Kilometers Opslaan</button>
-                <button class="btn btn-primary" onclick="exportKmBulkToPDF()">📄 Exporteer naar PDF</button>
-                <button class="btn btn-warning" onclick="clearSelectedCells('kilometers-bulk')" title="Wis geselecteerde cellen">🗑️ Wis Geselecteerde Cellen</button>
+
+                <button class="btn btn-success" onclick="saveKmBulk()">Alle Kilometers Opslaan</button>
+
+                <button class="btn btn-primary" onclick="exportKmBulkToPDF()">Exporteer naar PDF</button>
+
+                <button class="btn btn-warning" onclick="clearSelectedCells('kilometers-bulk')" title="Wis geselecteerde cellen">Wis Geselecteerde Cellen</button>
+
             </div>
+
             <div id="kilometers-bulk-list" style="overflow-x: auto;"></div>
+
         </div>
+
+
 
         <!-- Dagontvangsten -->
+
         <div id="dagontvangsten" class="content">
+
             <h2>Dagontvangsten Maandoverzicht</h2>
+
             <div class="filter-bar">
+
                 <div class="form-group" style="margin: 0; min-width: 150px;">
+
                     <label>Maand</label>
+
                     <input type="month" id="dagontvangsten-maand" onchange="loadDagontvangstenBulk()" value="">
+
                 </div>
-                <button class="btn btn-success" onclick="saveDagontvangstenBulk()">💾 Alle Ontvangsten Opslaan</button>
-                <button class="btn btn-primary" onclick="exportDagontvangstenToPDF()">📄 Exporteer naar PDF</button>
-                <button class="btn btn-warning" onclick="clearSelectedCells('dagontvangsten')" title="Wis geselecteerde cellen">🗑️ Wis Geselecteerde Cellen</button>
+
+                <button class="btn btn-success" onclick="saveDagontvangstenBulk()">Alle Ontvangsten Opslaan</button>
+
+                <button class="btn btn-primary" onclick="exportDagontvangstenToPDF()">Exporteer naar PDF</button>
+
+                <button class="btn btn-warning" onclick="clearSelectedCells('dagontvangsten')" title="Wis geselecteerde cellen">Wis Geselecteerde Cellen</button>
+
             </div>
+
             <div id="dagontvangsten-list" style="overflow-x: auto;"></div>
+
         </div>
+
+
 
         <!-- Gratis Cola -->
+
         <div id="gratis-cola" class="content">
+
             <h2>Gratis Cola Overzicht</h2>
+
             <div class="filter-bar">
+
                 <div class="form-group" style="margin: 0; min-width: 150px;">
+
                     <label>Jaar</label>
+
                     <select id="gratis-cola-jaar" onchange="loadGratisColaBulk()">
+
                         <option value="2026">2026</option>
+
                         <option value="2027">2027</option>
+
                         <option value="2028">2028</option>
+
                         <option value="2029">2029</option>
+
                         <option value="2030">2030</option>
+
                         <option value="2031">2031</option>
+
                         <option value="2032">2032</option>
+
                         <option value="2033">2033</option>
+
                         <option value="2034">2034</option>
+
                         <option value="2035">2035</option>
+
                     </select>
+
                 </div>
-                <button class="btn btn-success" onclick="saveGratisColaBulk()">💾 Alle Gratis Cola Opslaan</button>
-                <button class="btn btn-primary" onclick="exportGratisColaToPDF()">📄 Exporteer naar PDF</button>
-                <button class="btn btn-warning" onclick="clearSelectedCells('gratis-cola')" title="Wis geselecteerde cellen">🗑️ Wis Geselecteerde Cellen</button>
+
+                <button class="btn btn-success" onclick="saveGratisColaBulk()">Alle Gratis Cola Opslaan</button>
+
+                <button class="btn btn-primary" onclick="exportGratisColaToPDF()">Exporteer naar PDF</button>
+
+                <button class="btn btn-warning" onclick="clearSelectedCells('gratis-cola')" title="Wis geselecteerde cellen">Wis Geselecteerde Cellen</button>
+
             </div>
+
             <div id="gratis-cola-list" style="overflow-x: auto;"></div>
+
         </div>
+
+
 
         <!-- Import Excel -->
+
         <div id="import" class="content">
+
             <h2>Import Excel</h2>
+
             <div style="max-width: 600px;">
+
                 <div class="alert alert-info">
-                    <strong>📥 Importeer Excel bestanden</strong><br>
+
+                    <strong>Importeer Excel bestanden</strong><br>
+
                     Selecteer een Excel bestand om uren, afwezigheden of kilometers te importeren.
+
                 </div>
+
                 <div class="form-group">
+
                     <label>Selecteer Excel bestand (.xlsx, .xls)</label>
+
                     <input type="file" id="import-file" accept=".xlsx,.xls" style="padding: 10px;">
+
                 </div>
+
                 <div class="form-group">
+
                     <label>Import Type</label>
+
                     <select id="import-type">
+
                         <option value="uren-afwezigheden">Uren & Afwezigheden</option>
+
                         <option value="kilometers">Kilometers</option>
+
                         <option value="dagontvangsten">Dagontvangsten</option>
+
                         <option value="gratis-cola">Gratis Cola</option>
+
                     </select>
+
                 </div>
-                <button class="btn btn-primary" onclick="handleImport()">📥 Importeren</button>
+
+                <button class="btn btn-primary" onclick="handleImport()">Importeren</button>
+
                 <div id="import-result" style="margin-top: 20px;"></div>
+
             </div>
+
         </div>
+
     </div>
+
+
 
     <!-- Modal voor formulieren -->
+
     <div id="modal" class="modal">
+
         <div class="modal-content">
+
             <div id="modal-body"></div>
+
         </div>
+
     </div>
 
+
+
     <script>
+
         let currentPage = 'werknemers';
+
         let editingId = null;
+
         let selectedCells = new Set(); // Track selected cells
 
+
+
         // Cell selection functionality
+
         function setupCellSelection() {
+
             // Remove old event listeners by removing and re-adding
+
             document.removeEventListener('click', handleCellClick);
+
             document.addEventListener('click', handleCellClick, true);
+
         }
+
+
 
         function handleCellClick(event) {
+
             // Don't handle clicks on buttons
+
             if (event.target.tagName === 'BUTTON' || event.target.closest('button')) {
+
                 return;
+
             }
+
             
+
             const target = event.target;
+
             let cell = null;
+
             let input = null;
+
             
+
             // Check if click is on input or on cell
+
             if (target.tagName === 'INPUT' && (target.type === 'text' || target.type === 'number')) {
+
                 input = target;
+
                 cell = target.closest('td');
+
             } else if (target.tagName === 'TD') {
+
                 cell = target;
+
                 input = cell.querySelector('input[type="text"], input[type="number"]');
+
             } else {
+
                 // Check if parent is a td
+
                 cell = target.closest('td');
+
                 if (cell) {
+
                     input = cell.querySelector('input[type="text"], input[type="number"]');
+
                 }
+
             }
+
             
+
             if (!cell || !input) return;
+
             
+
             // Check if this is a data cell (not header or total row)
+
             const row = cell.closest('tr');
+
             if (!row) return;
+
             
+
             // Skip header rows and total rows
+
             if (row.parentElement.tagName === 'THEAD' || 
+
                 row.querySelector('td:first-child')?.textContent.trim() === 'TOTAAL' ||
+
                 row.querySelector('td:first-child')?.textContent.trim() === 'TOTAAL TOTAAL') {
+
                 return;
+
             }
+
             
+
             // Handle selection
+
             if (event.ctrlKey || event.metaKey) {
+
                 // Multi-select mode
+
                 event.preventDefault();
+
                 event.stopPropagation();
+
                 toggleCellSelection(cell, input);
+
             } else {
+
                 // Single select mode
+
                 if (!selectedCells.has(cell)) {
+
                     clearAllSelections();
+
                     selectCell(cell, input);
+
                 }
+
                 // Don't prevent default - allow normal input focus
+
             }
+
         }
+
+
 
         function selectCell(cell, input) {
+
             if (!cell || !input) return;
+
             cell.classList.add('cell-selected');
+
             selectedCells.add(cell);
+
         }
+
+
 
         function toggleCellSelection(cell, input) {
+
             if (!cell || !input) return;
+
             if (selectedCells.has(cell)) {
+
                 cell.classList.remove('cell-selected');
+
                 selectedCells.delete(cell);
+
             } else {
+
                 cell.classList.add('cell-selected');
+
                 selectedCells.add(cell);
+
             }
+
         }
+
+
 
         function clearAllSelections() {
+
             selectedCells.forEach(cell => {
+
                 if (cell && cell.classList) {
+
                     cell.classList.remove('cell-selected');
+
                 }
+
             });
+
             selectedCells.clear();
+
         }
 
+
+
         // Clear selected cells function
+
         function clearSelectedCells(pageType) {
+
             if (selectedCells.size === 0) {
+
                 alert('Geen cellen geselecteerd. Klik op een cel om te selecteren, of gebruik Ctrl+Klik voor meerdere cellen.');
+
                 return;
+
             }
 
+
+
             if (!confirm(`Weet je zeker dat je ${selectedCells.size} geselecteerde cel(len) wilt wissen?`)) {
+
                 return;
+
             }
+
+
 
             let cleared = 0;
 
+
+
             selectedCells.forEach(cell => {
+
                 if (!cell) return;
+
                 
+
                 const input = cell.querySelector('input');
+
                 if (!input) return;
 
+
+
                 // Clear based on page type
+
                 if (pageType === 'uren-bulk') {
+
                     const werknemerId = input.getAttribute('data-werknemer-id');
+
                     const day = parseInt(input.getAttribute('data-day'));
+
                     if (werknemerId && day) {
+
                         // Clear both uren and afwezigheid
+
                         updateUrenBulkCell(werknemerId, day, 'uren', '');
+
                         updateUrenBulkCell(werknemerId, day, 'afwezigheid', '');
+
                         input.value = '';
+
                         updateCellColor(input);
+
                         cleared++;
+
                     }
+
                 } else if (pageType === 'kilometers-bulk') {
+
                     const werknemerId = input.getAttribute('data-werknemer-id');
+
                     const day = parseInt(input.getAttribute('data-day'));
+
                     if (werknemerId && day) {
+
                         kmBulkData[werknemerId][day] = '';
+
                         input.value = '';
+
                         // Update totals for this row
+
                         updateKmBulkRowTotals(input.closest('tr'), werknemerId);
+
                         cleared++;
+
                     }
+
                 } else if (pageType === 'dagontvangsten') {
+
                     const day = parseInt(input.getAttribute('data-day'));
+
                     const btw = parseInt(input.getAttribute('data-btw'));
+
                     if (day && btw) {
+
                         updateDagontvangstBtwCell(day, btw, '');
+
                         input.value = '';
+
                         cleared++;
+
                     }
+
                 } else if (pageType === 'gratis-cola') {
+
                     const day = parseInt(input.getAttribute('data-day'));
+
                     const month = parseInt(input.getAttribute('data-month'));
+
                     const type = input.getAttribute('data-type');
+
                     if (day && month && type) {
+
                         updateGratisColaCell(day, month, type, '');
+
                         input.value = '';
+
                         cleared++;
+
                     }
+
                 }
+
             });
+
+
 
             // Update totals if needed
+
             if (pageType === 'uren-bulk') {
+
                 updateTotals();
+
             } else if (pageType === 'dagontvangsten') {
+
                 updateDagontvangstenTotals();
+
             } else if (pageType === 'gratis-cola') {
+
                 updateGratisColaTotals();
+
             }
+
+
 
             clearAllSelections();
-            alert(`✅ ${cleared} cel(len) gewist!`);
+
+            alert(`${cleared} cel(len) gewist!`);
+
         }
+
+
 
             // Initialize
+
             document.addEventListener('DOMContentLoaded', () => {
+
                 const today = new Date();
+
                 const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
                 document.getElementById('uren-maand').value = monthStr;
+
                 document.getElementById('kilometers-maand').value = monthStr;
+
                 document.getElementById('uren-bulk-maand').value = monthStr;
+
                 document.getElementById('km-bulk-maand').value = monthStr;
+
                 const dagontvangstenInput = document.getElementById('dagontvangsten-maand');
+
                 if (dagontvangstenInput) dagontvangstenInput.value = monthStr;
+
                 loadWerknemers();
+
             });
+
+
 
         async function showPage(page, event) {
+
             currentPage = page;
+
             document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+
             document.querySelectorAll('.nav button').forEach(btn => btn.classList.remove('active'));
+
             document.getElementById(page).classList.add('active');
+
             
+
             if (event && event.target) {
+
                 event.target.classList.add('active');
+
             } else {
+
                 // Find button by onclick attribute
+
                 const buttons = document.querySelectorAll('.nav button');
+
                 buttons.forEach(btn => {
+
                     const onclickAttr = btn.getAttribute('onclick');
+
                     if (onclickAttr && onclickAttr.includes(`'${page}'`)) {
+
                         btn.classList.add('active');
+
                     }
+
                 });
+
             }
+
             
+
             if (page === 'werknemers') {
+
                 await loadWerknemers();
+
             } else if (page === 'uren') {
+
                 await loadWerknemerSelect('uren-werknemer');
+
                 await loadUren();
+
             } else if (page === 'afwezigheden') {
+
                 // Pagina is leeg gemaakt
+
             } else if (page === 'kilometers') {
+
                 await loadWerknemerSelect('kilometers-werknemer');
+
                 await loadKilometers();
+
             } else if (page === 'uren-bulk') {
+
                 const today = new Date();
+
                 const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
                 const monthInput = document.getElementById('uren-bulk-maand');
+
                 if (monthInput) monthInput.value = monthStr;
+
                 await loadUrenBulk();
+
             } else if (page === 'kilometers-bulk') {
+
                 const today = new Date();
+
                 const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
                 const monthInput = document.getElementById('km-bulk-maand');
+
                 if (monthInput) monthInput.value = monthStr;
+
                 await loadKmBulk();
+
             } else if (page === 'dagontvangsten') {
+
                 const today = new Date();
+
                 const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
                 const monthInput = document.getElementById('dagontvangsten-maand');
+
                 if (monthInput) monthInput.value = monthStr;
+
                 await loadDagontvangstenBulk();
+
             } else if (page === 'gratis-cola') {
+
                 const jaarInput = document.getElementById('gratis-cola-jaar');
+
                 if (jaarInput && !jaarInput.value) {
+
                     // Set default to 2026 or current year if it's 2026 or later
+
                     const currentYear = new Date().getFullYear();
+
                     jaarInput.value = currentYear >= 2026 ? currentYear.toString() : '2026';
+
                 }
+
                 await loadGratisColaBulk();
+
             }
+
         }
+
+
 
         function showModal(html) {
+
             document.getElementById('modal-body').innerHTML = html;
+
             document.getElementById('modal').classList.add('active');
+
         }
+
+
 
         function closeModal() {
+
             document.getElementById('modal').classList.remove('active');
+
             editingId = null;
+
         }
+
+
 
         // Werknemers
+
         async function loadWerknemers() {
+
             const werknemers = await window.db.get('werknemers');
+
             const list = document.getElementById('werknemers-list');
+
             
+
             if (werknemers.length === 0) {
+
                 list.innerHTML = '<div class="empty-state"><p>Geen werknemers gevonden. Voeg er een toe!</p></div>';
+
                 return;
+
             }
+
+
 
             let html = '<table><thead><tr><th>Naam</th><th>Email</th><th>Nummerplaat</th><th>Status</th><th>Acties</th></tr></thead><tbody>';
+
             werknemers.forEach(w => {
+
                 html += `<tr>
+
                     <td>${w.naam || ''}</td>
+
                     <td>${w.email || '-'}</td>
+
                     <td>${w.nummerplaat || '-'}</td>
+
                     <td>${w.actief !== false ? '<span style="color: green;">Actief</span>' : '<span style="color: red;">Inactief</span>'}</td>
+
                     <td>
+
                         <button class="btn btn-primary" onclick="editWerknemer('${w.id}')">Bewerken</button>
+
                         <button class="btn btn-danger" onclick="deleteWerknemer('${w.id}')">Verwijderen</button>
+
                     </td>
+
                 </tr>`;
+
             });
+
             html += '</tbody></table>';
+
             list.innerHTML = html;
+
         }
+
+
 
         function showWerknemerForm() {
+
             editingId = null;
+
             const html = `
+
                 <h2>${editingId ? 'Bewerk' : 'Nieuwe'} Werknemer</h2>
+
                 <form onsubmit="saveWerknemer(event)">
+
                     <div class="form-group">
+
                         <label>Naam *</label>
+
                         <input type="text" id="wn-naam" required>
+
                     </div>
+
                     <div class="form-group">
+
                         <label>Email</label>
+
                         <input type="email" id="wn-email">
+
                     </div>
+
                     <div class="form-group">
+
                         <label>Nummerplaat</label>
+
                         <input type="text" id="wn-nummerplaat">
+
                     </div>
+
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
+
                         <button type="submit" class="btn btn-primary">Opslaan</button>
+
                         <button type="button" class="btn" onclick="closeModal()">Annuleren</button>
+
                     </div>
+
                 </form>
+
             `;
+
             showModal(html);
+
         }
+
+
 
         async function editWerknemer(id) {
+
             const werknemers = await window.db.get('werknemers');
+
             const w = werknemers.find(w => w.id === id);
+
             if (!w) return;
+
             
+
             editingId = id;
+
             const html = `
+
                 <h2>Bewerk Werknemer</h2>
+
                 <form onsubmit="saveWerknemer(event)">
+
                     <div class="form-group">
+
                         <label>Naam *</label>
+
                         <input type="text" id="wn-naam" value="${w.naam || ''}" required>
+
                     </div>
+
                     <div class="form-group">
+
                         <label>Email</label>
+
                         <input type="email" id="wn-email" value="${w.email || ''}">
+
                     </div>
+
                     <div class="form-group">
+
                         <label>Nummerplaat</label>
+
                         <input type="text" id="wn-nummerplaat" value="${w.nummerplaat || ''}">
+
                     </div>
+
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
+
                         <button type="submit" class="btn btn-primary">Opslaan</button>
+
                         <button type="button" class="btn" onclick="closeModal()">Annuleren</button>
+
                     </div>
+
                 </form>
+
             `;
+
             showModal(html);
+
         }
+
+
 
         async function saveWerknemer(e) {
+
             e.preventDefault();
+
             const data = {
+
                 naam: document.getElementById('wn-naam').value,
+
                 email: document.getElementById('wn-email').value || null,
+
                 nummerplaat: document.getElementById('wn-nummerplaat').value || null,
+
                 actief: true
+
             };
+
+
 
             if (editingId) {
+
                 await window.db.update('werknemers', editingId, data);
+
             } else {
+
                 await window.db.add('werknemers', data);
+
             }
+
             
+
             closeModal();
+
             loadWerknemers();
+
             // Reload selects
+
             loadWerknemerSelect('uren-werknemer');
+
             loadWerknemerSelect('afwezigheden-werknemer');
+
             loadWerknemerSelect('kilometers-werknemer');
+
         }
+
+
 
         async function deleteWerknemer(id) {
+
             if (confirm('Weet u zeker dat u deze werknemer wilt verwijderen?')) {
+
                 await window.db.delete('werknemers', id);
+
                 loadWerknemers();
+
             }
+
         }
+
+
 
         async function loadWerknemerSelect(selectId) {
+
             try {
+
                 const werknemers = await window.db.get('werknemers');
+
                 const select = document.getElementById(selectId);
+
                 if (!select) return;
+
                 
+
                 // Voor kilometers: toon alle werknemers maar markeer nummerplaat
+
                 const isKilometersSelect = selectId === 'kilometers-werknemer';
+
                 const filteredWerknemers = werknemers.filter(w => w.actief !== false);
+
                 
+
                 select.innerHTML = '<option value="">-- Selecteer werknemer --</option>';
+
                 filteredWerknemers.forEach(w => {
+
                     select.innerHTML += `<option value="${w.id}">${w.naam}${w.nummerplaat ? ` (${w.nummerplaat})` : ''}</option>`;
+
                 });
+
             } catch (error) {
+
                 console.error('Error loading werknemers select:', error);
+
             }
+
         }
+
+
 
         // Uren
+
         async function loadUren() {
+
             const werknemerId = document.getElementById('uren-werknemer').value;
+
             const maand = document.getElementById('uren-maand').value;
+
             if (!werknemerId || !maand) {
+
                 document.getElementById('uren-list').innerHTML = '<div class="empty-state"><p>Selecteer een werknemer en maand</p></div>';
+
                 return;
+
             }
 
+
+
             const allUren = await window.db.get('uren');
+
             const [year, month] = maand.split('-');
+
             const filtered = allUren.filter(u => {
+
                 const date = new Date(u.datum);
+
                 return u.werknemerId === werknemerId && 
+
                        date.getFullYear() == year && 
+
                        date.getMonth() + 1 == month;
+
             });
+
+
 
             const list = document.getElementById('uren-list');
+
             if (filtered.length === 0) {
+
                 list.innerHTML = '<div class="empty-state"><p>Geen uren geregistreerd voor deze maand</p></div>';
+
                 return;
+
             }
+
+
 
             let html = '<table><thead><tr><th>Datum</th><th>Uren</th><th>Opmerking</th><th>Acties</th></tr></thead><tbody>';
+
             filtered.forEach(u => {
+
                 const date = new Date(u.datum);
+
                 html += `<tr>
+
                     <td>${date.toLocaleDateString('nl-NL')}</td>
+
                     <td>${u.uren}</td>
+
                     <td>${u.opmerking || '-'}</td>
+
                     <td><button class="btn btn-danger" onclick="deleteUren('${u.id}')">Verwijderen</button></td>
+
                 </tr>`;
+
             });
+
             html += '</tbody></table>';
+
             list.innerHTML = html;
+
         }
+
+
 
         function showUrenForm() {
+
             const werknemerId = document.getElementById('uren-werknemer').value;
+
             if (!werknemerId) {
+
                 alert('Selecteer eerst een werknemer');
+
                 return;
+
             }
 
+
+
             const html = `
+
                 <h2>Uren Toevoegen</h2>
+
                 <form onsubmit="saveUren(event)">
+
                     <div class="form-group">
+
                         <label>Datum *</label>
+
                         <input type="date" id="uren-datum" required>
+
                     </div>
+
                     <div class="form-group">
+
                         <label>Aantal uren *</label>
+
                         <input type="number" id="uren-aantal" value="8" min="0" step="0.5" required>
+
                     </div>
+
                     <div class="form-group">
+
                         <label>Opmerking</label>
+
                         <textarea id="uren-opmerking" rows="3"></textarea>
+
                     </div>
+
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
+
                         <button type="submit" class="btn btn-primary">Opslaan</button>
+
                         <button type="button" class="btn" onclick="closeModal()">Annuleren</button>
+
                     </div>
+
                 </form>
+
             `;
+
             showModal(html);
+
         }
+
+
 
         async function saveUren(e) {
+
             e.preventDefault();
+
             const werknemerId = document.getElementById('uren-werknemer').value;
+
             const datum = document.getElementById('uren-datum').value;
+
             const uren = parseFloat(document.getElementById('uren-aantal').value);
+
             const opmerking = document.getElementById('uren-opmerking').value || null;
 
+
+
             await window.db.add('uren', {
+
                 werknemerId,
+
                 datum: new Date(datum).toISOString(),
+
                 uren,
+
                 opmerking
+
             });
 
+
+
             closeModal();
+
             loadUren();
+
         }
+
+
 
         async function deleteUren(id) {
+
             if (confirm('Weet u zeker dat u deze urenregistratie wilt verwijderen?')) {
+
                 await window.db.delete('uren', id);
+
                 loadUren();
+
             }
+
         }
+
+
 
         // Afwezigheden - pagina is leeg gemaakt
+
         async function loadAfwezigheden() {
+
             // Leeg - pagina is niet beschikbaar
+
         }
+
+
 
         // Kilometers
+
         async function loadKilometers() {
+
             const werknemerId = document.getElementById('kilometers-werknemer').value;
+
             const maand = document.getElementById('kilometers-maand').value;
+
             if (!werknemerId || !maand) {
+
                 document.getElementById('kilometers-list').innerHTML = '<div class="empty-state"><p>Selecteer een werknemer en maand</p></div>';
+
                 return;
+
             }
+
             
+
             // Check if selected werknemer has nummerplaat (koerier)
+
             const werknemers = await window.db.get('werknemers');
+
             const selectedWerknemer = werknemers.find(w => w.id === werknemerId);
+
             if (selectedWerknemer && !selectedWerknemer.nummerplaat) {
+
                 document.getElementById('kilometers-list').innerHTML = '<div class="empty-state"><p>Deze werknemer heeft geen nummerplaat. Alleen koeriers kunnen kilometers registreren.</p></div>';
+
                 return;
+
             }
+
+
 
             const allKm = await window.db.get('kilometers');
+
             const [year, month] = maand.split('-');
+
             const filtered = allKm.filter(k => {
+
                 const date = new Date(k.datum);
+
                 return k.werknemerId === werknemerId && 
+
                        date.getFullYear() == year && 
+
                        date.getMonth() + 1 == month;
+
             });
+
+
 
             const list = document.getElementById('kilometers-list');
+
             if (filtered.length === 0) {
+
                 list.innerHTML = '<div class="empty-state"><p>Geen kilometers geregistreerd voor deze maand</p></div>';
+
                 return;
+
             }
+
+
 
             let totaal = 0;
-            let html = '<table><thead><tr><th>Datum</th><th>Kilometers</th><th>Van</th><th>Naar</th><th>Kosten (€0.40/km)</th><th>Acties</th></tr></thead><tbody>';
+
+            let html = '<table><thead><tr><th>Datum</th><th>Kilometers</th><th>Van</th><th>Naar</th><th>Kosten (&euro;0.40/km)</th><th>Acties</th></tr></thead><tbody>';
+
             filtered.forEach(k => {
+
                 const date = new Date(k.datum);
+
                 const kosten = (k.kilometers * 0.40).toFixed(2);
+
                 totaal += k.kilometers;
+
                 html += `<tr>
+
                     <td>${date.toLocaleDateString('nl-NL')}</td>
+
                     <td>${k.kilometers}</td>
+
                     <td>${k.vanAdres || '-'}</td>
+
                     <td>${k.naarAdres || '-'}</td>
-                    <td>€${kosten}</td>
+
+                    <td>&euro;${kosten}</td>
+
                     <td><button class="btn btn-danger" onclick="deleteKilometer('${k.id}')">Verwijderen</button></td>
+
                 </tr>`;
+
             });
+
             html += `<tr style="font-weight: bold; background: #f8f9fa;">
+
                 <td colspan="2">Totaal</td>
+
                 <td colspan="2">${totaal} km</td>
-                <td>€${(totaal * 0.40).toFixed(2)}</td>
+
+                <td>&euro;${(totaal * 0.40).toFixed(2)}</td>
+
                 <td></td>
+
             </tr>`;
+
             html += '</tbody></table>';
+
             list.innerHTML = html;
+
         }
+
+
 
         async function showKilometerForm() {
+
             const werknemerId = document.getElementById('kilometers-werknemer').value;
+
             if (!werknemerId) {
+
                 alert('Selecteer eerst een werknemer');
+
                 return;
+
             }
+
             
+
             // Check if werknemer has nummerplaat (koerier)
+
             const werknemers = await window.db.get('werknemers');
+
             const selectedWerknemer = werknemers.find(w => w.id === werknemerId);
+
             if (!selectedWerknemer || !selectedWerknemer.nummerplaat || selectedWerknemer.nummerplaat.trim() === '') {
+
                 alert('Alleen koeriers (met nummerplaat) kunnen kilometers registreren. Voeg eerst een nummerplaat toe aan deze werknemer.');
+
                 return;
+
             }
+
+
 
             const html = `
+
                 <h2>Kilometers Toevoegen</h2>
+
                 <form onsubmit="saveKilometer(event)">
+
                     <div class="form-group">
+
                         <label>Datum *</label>
+
                         <input type="date" id="km-datum" required>
+
                     </div>
+
                     <div class="form-group">
+
                         <label>Aantal kilometers *</label>
+
                         <input type="number" id="km-aantal" min="0" step="0.1" required>
+
                     </div>
+
                     <div class="form-group">
+
                         <label>Van Adres</label>
+
                         <input type="text" id="km-van">
+
                     </div>
+
                     <div class="form-group">
+
                         <label>Naar Adres</label>
+
                         <input type="text" id="km-naar">
+
                     </div>
+
                     <div class="form-group">
+
                         <label>Doel</label>
+
                         <input type="text" id="km-doel">
+
                     </div>
+
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
+
                         <button type="submit" class="btn btn-primary">Opslaan</button>
+
                         <button type="button" class="btn" onclick="closeModal()">Annuleren</button>
+
                     </div>
+
                 </form>
+
             `;
+
             showModal(html);
+
         }
+
+
 
         async function saveKilometer(e) {
+
             e.preventDefault();
+
             const werknemerId = document.getElementById('kilometers-werknemer').value;
+
             const data = {
+
                 werknemerId,
+
                 datum: new Date(document.getElementById('km-datum').value).toISOString(),
+
                 kilometers: parseFloat(document.getElementById('km-aantal').value),
+
                 vanAdres: document.getElementById('km-van').value || null,
+
                 naarAdres: document.getElementById('km-naar').value || null,
+
                 doel: document.getElementById('km-doel').value || null
+
             };
 
+
+
             await window.db.add('kilometers', data);
+
             closeModal();
+
             loadKilometers();
+
         }
+
+
 
         async function deleteKilometer(id) {
+
             if (confirm('Weet u zeker dat u deze kilometerregistratie wilt verwijderen?')) {
+
                 await window.db.delete('kilometers', id);
+
                 loadKilometers();
+
             }
+
         }
 
+
+
         // Uren Bulk Overzicht (Excel-stijl met afwezigheden)
+
         let urenBulkData = {};
+
         let urenBulkWerknemers = []; // Store werknemers for totals calculation
 
+
+
         async function loadUrenBulk() {
+
             const maand = document.getElementById('uren-bulk-maand').value;
+
             if (!maand) {
+
                 document.getElementById('uren-bulk-list').innerHTML = '<div class="empty-state"><p>Selecteer een maand</p></div>';
+
                 return;
+
             }
 
+
+
             const werknemers = await window.db.get('werknemers');
+
             const actieveWerknemers = werknemers.filter(w => w.actief !== false);
+
             const allUren = await window.db.get('uren');
+
             const [year, month] = maand.split('-');
+
             
+
             urenBulkData = {};
+
             urenBulkWerknemers = actieveWerknemers.map(w => w.id); // Store for totals
+
             const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
             const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
             // Always show days 1-31 in header
+
             const allDays = Array.from({ length: 31 }, (_, i) => i + 1);
 
+
+
             // Get month name for display
+
             const monthNames = ['januari', 'februari', 'maart', 'april', 'mei', 'juni',
+
                               'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+
             const monthName = monthNames[parseInt(month) - 1];
 
+
+
             // Initialize data structure: { werknemerId: { day: { uren: number, afwezigheid: string } } }
+
             actieveWerknemers.forEach(w => {
+
                 urenBulkData[w.id] = {};
+
                 days.forEach(day => {
+
                     const date = new Date(parseInt(year), parseInt(month) - 1, day);
+
                     const dateStr = date.toISOString().split('T')[0];
+
                     const uren = allUren.find(u => 
+
                         u.werknemerId === w.id && 
+
                         new Date(u.datum).toISOString().split('T')[0] === dateStr
+
                     );
+
                     // Only set values if they exist, otherwise leave empty
+
                     urenBulkData[w.id][day] = {
+
                         uren: (uren && uren.uren !== null && uren.uren !== undefined) ? uren.uren : '',
+
                         afwezigheid: (uren && uren.afwezigheid) ? uren.afwezigheid : ''
+
                     };
+
                 });
+
             });
 
+
+
             // Render table - Excel style
-            let html = '<div style="overflow-x: auto; margin-top: 20px;">';
-            html += '<table style="font-size: 11px; border-collapse: collapse; min-width: 100%;" class="uren-bulk-table">';
+
+            let html = '<div style="margin-top: 20px;">';
+
+            html += '<table style="font-size: 9px; border-collapse: collapse; width: 100%; table-layout: fixed;" class="uren-bulk-table">';
+
             
-            // Header row 1: Month name and days (always 1-31)
+
+            // Helper function to get day name
+            const getDayName = (day) => {
+                if (day > daysInMonth) return '';
+                const date = new Date(parseInt(year), parseInt(month) - 1, day);
+                const dayNames = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
+                return dayNames[date.getDay()];
+            };
+
+            // Header row 1: Month name and days (always 1-31) - Compact Excel style
             html += '<thead><tr style="background: #4472C4; color: white; font-weight: bold;">';
-            html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 150px; position: sticky; left: 0; background: #4472C4; z-index: 10;">Naam Werknemer</th>';
-            html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 60px; position: sticky; left: 150px; background: #4472C4; z-index: 10;">Dag</th>';
+            html += '<th style="border: 1px solid #4472C4; padding: 3px; text-align: center; width: 110px; position: sticky; left: 0; background: #4472C4; z-index: 10;" rowspan="2">Naam Werknemer</th>';
+            html += '<th style="border: 1px solid #4472C4; padding: 3px; text-align: center; width: 35px; position: sticky; left: 110px; background: #4472C4; z-index: 10;" rowspan="2">Dag</th>';
+
             allDays.forEach(day => {
                 // Hide days beyond month length with opacity
                 const isInMonth = day <= daysInMonth;
                 const style = isInMonth 
-                    ? 'border: 1px solid #ddd; padding: 4px; text-align: center; min-width: 50px;'
-                    : 'border: 1px solid #ddd; padding: 4px; text-align: center; min-width: 50px; opacity: 0.3; background: #f0f0f0;';
+                    ? 'border: 1px solid #4472C4; padding: 2px; text-align: center; width: 32px;'
+                    : 'border: 1px solid #4472C4; padding: 2px; text-align: center; width: 32px; opacity: 0.3; background: #f0f0f0;';
                 html += `<th style="${style}">${day}</th>`;
             });
-            html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 80px; background: #70AD47; color: white;">Totaal</th>';
-            html += '</tr></thead><tbody>';
-            
-            // Data rows
-            actieveWerknemers.forEach(w => {
-                let totaal = 0;
-                html += `<tr>`;
-                html += `<td style="border: 1px solid #ddd; padding: 6px; font-weight: bold; position: sticky; left: 0; background: white; z-index: 5;"><strong>${w.naam}</strong></td>`;
-                html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; position: sticky; left: 150px; background: white; z-index: 5; font-size: 10px; color: #666;">Dag</td>`;
-                
-                allDays.forEach(day => {
-                    const isInMonth = day <= daysInMonth;
-                    const data = isInMonth ? (urenBulkData[w.id][day] || { uren: '', afwezigheid: '' }) : null;
-                    const urenValue = data ? (data.uren || '') : '';
-                    const afwezigheidValue = data ? (data.afwezigheid || '') : '';
-                    
-                    // Calculate total (only count uren, not afwezigheden) - only for days in month
-                    if (isInMonth && typeof urenValue === 'number' && urenValue > 0) {
-                        totaal += urenValue;
-                    }
-                    
-                    // Determine cell content
-                    let cellContent = '';
-                    let cellStyle = 'border: 1px solid #ddd; padding: 2px; text-align: center;';
-                    
-                    if (!isInMonth) {
-                        // Day beyond month - show empty disabled cell
-                        cellContent = '';
-                        cellStyle += 'opacity: 0.3; background: #f0f0f0;';
-                    } else if (afwezigheidValue) {
-                        // Show afwezigheid code
-                        let bgColor = '#fff';
-                        if (afwezigheidValue === 'V') bgColor = '#FFC000'; // Vakantie - geel
-                        else if (afwezigheidValue === 'A') bgColor = '#E7E6E6'; // Aangepast - grijs
-                        else if (afwezigheidValue === 'S') bgColor = '#D9E1F2'; // School - lichtblauw
-                        
-                        cellContent = `<div style="position: relative;">
-                            <span style="position: absolute; top: 1px; left: 2px; font-size: 8px; color: #999;">${day}</span>
-                            <input type="text" value="${afwezigheidValue}" maxlength="1" 
-                                data-werknemer-id="${w.id}" data-day="${day}"
-                                style="width: 100%; border: none; text-align: center; font-weight: bold; background: ${bgColor}; padding-top: 12px;" 
-                                onchange="updateUrenBulkCell('${w.id}', ${day}, 'afwezigheid', this.value.toUpperCase()); updateCellColor(this); updateTotals();" 
-                                onkeyup="this.value = this.value.toUpperCase(); updateCellColorOnKeyup(this); if(this.value && !['A','V','S',''].includes(this.value)) { this.value=''; updateCellColor(this); }"
-                                onmousedown="startDragFill(event, '${w.id}', ${day})"
-                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">
-                        </div>`;
-                        cellStyle += `background: ${bgColor};`;
-                    } else if (urenValue !== '') {
-                        // Show uren
-                        cellContent = `<div style="position: relative;">
-                            <span style="position: absolute; top: 1px; left: 2px; font-size: 8px; color: #999;">${day}</span>
-                            <input type="number" value="${urenValue}" step="0.5" min="0" 
-                                data-werknemer-id="${w.id}" data-day="${day}"
-                                style="width: 100%; border: none; text-align: center; padding-top: 12px;" 
-                                onchange="updateUrenBulkCell('${w.id}', ${day}, 'uren', parseFloat(this.value) || ''); updateTotals();"
-                                onmousedown="startDragFill(event, '${w.id}', ${day})"
-                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">
-                        </div>`;
-                    } else {
-                        // Empty cell - can enter either uren or afwezigheid (NO PLACEHOLDER)
-                        cellContent = `<div style="position: relative;">
-                            <span style="position: absolute; top: 1px; left: 2px; font-size: 8px; color: #999;">${day}</span>
-                            <input type="text" value="" 
-                                data-werknemer-id="${w.id}" data-day="${day}"
-                                style="width: 100%; border: none; text-align: center; padding-top: 12px;" 
-                                onchange="handleUrenBulkInput('${w.id}', ${day}, this.value); updateTotals();"
-                                onkeyup="handleUrenBulkInputKeyup('${w.id}', ${day}, this);"
-                                onmousedown="startDragFill(event, '${w.id}', ${day})"
-                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">
-                        </div>`;
-                    }
-                    
-                    html += `<td style="${cellStyle}" class="uren-cell" data-werknemer-id="${w.id}" data-day="${day}">${cellContent}</td>`;
-                });
-                
-                html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; font-weight: bold; background: #E2EFDA;"><strong>${totaal.toFixed(1)}</strong></td></tr>`;
-            });
-            
-            // Totaal row per dag
-            html += '<tr style="background: #D9E1F2; font-weight: bold;"><td style="border: 1px solid #ddd; padding: 6px; position: sticky; left: 0; background: #D9E1F2; z-index: 5;">TOTAAL</td>';
-            html += '<td style="border: 1px solid #ddd; padding: 6px; position: sticky; left: 150px; background: #D9E1F2; z-index: 5;"></td>';
+
+            html += '<th style="border: 1px solid #70AD47; padding: 3px; text-align: center; width: 60px; background: #70AD47; color: white;" rowspan="2">Totaal</th>';
+            html += '</tr>';
+
+            // Header row 2: Day names (ma, di, wo, etc.)
+            html += '<tr style="background: #4472C4; color: white; font-weight: bold;">';
             allDays.forEach(day => {
                 const isInMonth = day <= daysInMonth;
-                let dagTotaal = 0;
-                if (isInMonth) {
-                    actieveWerknemers.forEach(w => {
-                        const data = urenBulkData[w.id][day];
-                        const val = data ? data.uren : '';
-                        if (typeof val === 'number' && val > 0) dagTotaal += val;
-                    });
-                }
+                const dayName = getDayName(day);
                 const style = isInMonth 
-                    ? 'border: 1px solid #ddd; padding: 6px; text-align: center;'
-                    : 'border: 1px solid #ddd; padding: 6px; text-align: center; opacity: 0.3; background: #f0f0f0;';
-                html += `<td style="${style}">${isInMonth ? dagTotaal.toFixed(1) : ''}</td>`;
+                    ? 'border: 1px solid #4472C4; padding: 2px; text-align: center; width: 32px; font-size: 8px;'
+                    : 'border: 1px solid #4472C4; padding: 2px; text-align: center; width: 32px; opacity: 0.3; background: #f0f0f0; font-size: 8px;';
+                html += `<th style="${style}">${dayName}</th>`;
             });
+            html += '</tr></thead><tbody>';
+
             
-            // Grand total
-            let grandTotal = 0;
+
+            // Data rows
+
             actieveWerknemers.forEach(w => {
-                days.forEach(day => {
-                    const data = urenBulkData[w.id][day];
-                    const val = data.uren;
-                    if (typeof val === 'number' && val > 0) grandTotal += val;
+
+                let totaal = 0;
+
+                html += `<tr>`;
+
+                html += `<td style="border: 1px solid #ddd; padding: 3px; font-weight: bold; position: sticky; left: 0; background: white; z-index: 5; font-size: 9px;"><strong>${w.naam}</strong></td>`;
+
+                html += `<td style="border: 1px solid #ddd; padding: 3px; text-align: center; position: sticky; left: 110px; background: white; z-index: 5; font-size: 8px; color: #666;">Dag</td>`;
+
+                
+
+                allDays.forEach(day => {
+
+                    const isInMonth = day <= daysInMonth;
+
+                    const data = isInMonth ? (urenBulkData[w.id][day] || { uren: '', afwezigheid: '' }) : null;
+
+                    const urenValue = data ? (data.uren || '') : '';
+
+                    const afwezigheidValue = data ? (data.afwezigheid || '') : '';
+
+                    
+
+                    // Calculate total (only count uren, not afwezigheden) - only for days in month
+
+                    if (isInMonth && typeof urenValue === 'number' && urenValue > 0) {
+
+                        totaal += urenValue;
+
+                    }
+
+                    
+
+                    // Determine cell content
+
+                    let cellContent = '';
+
+                    let cellStyle = 'border: 1px solid #ddd; padding: 1px; text-align: center; font-size: 9px;';
+
+                    
+
+                    if (!isInMonth) {
+
+                        // Day beyond month - show empty disabled cell
+
+                        cellContent = '';
+
+                        cellStyle += 'opacity: 0.3; background: #f0f0f0;';
+
+                    } else if (afwezigheidValue) {
+
+                        // Show afwezigheid code
+
+                        let bgColor = '#fff';
+
+                        if (afwezigheidValue === 'V') bgColor = '#FFC000'; // Vakantie - geel
+
+                        else if (afwezigheidValue === 'A') bgColor = '#E7E6E6'; // Aangepast - grijs
+
+                        else if (afwezigheidValue === 'S') bgColor = '#D9E1F2'; // School - lichtblauw
+
+                        
+
+                        cellContent = `<div style="position: relative;">
+
+                            <span style="position: absolute; top: 0px; left: 1px; font-size: 7px; color: #999;">${day}</span>
+
+                            <input type="text" value="${afwezigheidValue}" maxlength="1" 
+
+                                data-werknemer-id="${w.id}" data-day="${day}"
+
+                                style="width: 100%; border: none; text-align: center; font-weight: bold; background: ${bgColor}; padding-top: 8px; font-size: 9px; height: 20px;" 
+
+                                onchange="updateUrenBulkCell('${w.id}', ${day}, 'afwezigheid', this.value.toUpperCase()); updateCellColor(this); updateTotals();" 
+
+                                onkeyup="this.value = this.value.toUpperCase(); updateCellColorOnKeyup(this); if(this.value && !['A','V','S',''].includes(this.value)) { this.value=''; updateCellColor(this); }"
+
+                                onmousedown="startDragFill(event, '${w.id}', ${day})"
+
+                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">
+
+                        </div>`;
+
+                        cellStyle += `background: ${bgColor};`;
+
+                    } else if (urenValue !== '') {
+
+                        // Show uren
+
+                        cellContent = `<div style="position: relative;">
+
+                            <span style="position: absolute; top: 0px; left: 1px; font-size: 7px; color: #999;">${day}</span>
+
+                            <input type="number" value="${urenValue}" step="0.5" min="0" 
+
+                                data-werknemer-id="${w.id}" data-day="${day}"
+
+                                style="width: 100%; border: none; text-align: center; padding-top: 8px; font-size: 9px; height: 20px;" 
+
+                                onchange="updateUrenBulkCell('${w.id}', ${day}, 'uren', parseFloat(this.value) || ''); updateTotals();"
+
+                                onmousedown="startDragFill(event, '${w.id}', ${day})"
+
+                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">
+
+                        </div>`;
+
+                    } else {
+
+                        // Empty cell - can enter either uren or afwezigheid (NO PLACEHOLDER)
+
+                        cellContent = `<div style="position: relative;">
+
+                            <span style="position: absolute; top: 1px; left: 2px; font-size: 8px; color: #999;">${day}</span>
+
+                            <input type="text" value="" 
+
+                                data-werknemer-id="${w.id}" data-day="${day}"
+
+                                style="width: 100%; border: none; text-align: center; padding-top: 8px; font-size: 9px; height: 20px;" 
+
+                                onchange="handleUrenBulkInput('${w.id}', ${day}, this.value); updateTotals();"
+
+                                onkeyup="handleUrenBulkInputKeyup('${w.id}', ${day}, this);"
+
+                                onmousedown="startDragFill(event, '${w.id}', ${day})"
+
+                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">
+
+                        </div>`;
+
+                    }
+
+                    
+
+                    html += `<td style="${cellStyle}" class="uren-cell" data-werknemer-id="${w.id}" data-day="${day}">${cellContent}</td>`;
+
                 });
+
+                
+
+                html += `<td style="border: 1px solid #ddd; padding: 3px; text-align: center; font-weight: bold; background: #E2EFDA; font-size: 9px;"><strong>${totaal.toFixed(1)}</strong></td></tr>`;
+
             });
-            html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #C5E0B4;">${grandTotal.toFixed(1)}</td></tr>`;
+
             
+
+            // Totaal row per dag
+
+            html += '<tr style="background: #D9E1F2; font-weight: bold;"><td style="border: 1px solid #ddd; padding: 3px; position: sticky; left: 0; background: #D9E1F2; z-index: 5; font-size: 9px;">TOTAAL</td>';
+
+            html += '<td style="border: 1px solid #ddd; padding: 3px; position: sticky; left: 110px; background: #D9E1F2; z-index: 5;"></td>';
+
+            allDays.forEach(day => {
+
+                const isInMonth = day <= daysInMonth;
+
+                let dagTotaal = 0;
+
+                if (isInMonth) {
+
+                    actieveWerknemers.forEach(w => {
+
+                        const data = urenBulkData[w.id][day];
+
+                        const val = data ? data.uren : '';
+
+                        if (typeof val === 'number' && val > 0) dagTotaal += val;
+
+                    });
+
+                }
+
+                const style = isInMonth 
+
+                    ? 'border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 9px;'
+
+                    : 'border: 1px solid #ddd; padding: 2px; text-align: center; opacity: 0.3; background: #f0f0f0; font-size: 9px;';
+
+                html += `<td style="${style}">${isInMonth ? dagTotaal.toFixed(1) : ''}</td>`;
+
+            });
+
+            
+
+            // Grand total row
+
+            html += '<tr style="background: #C5E0B4; font-weight: bold;">';
+            html += '<td style="border: 1px solid #ddd; padding: 3px; position: sticky; left: 0; background: #C5E0B4; z-index: 5; font-size: 9px;">TOTAAL TOTAAL</td>';
+            html += '<td style="border: 1px solid #ddd; padding: 3px; position: sticky; left: 110px; background: #C5E0B4; z-index: 5;"></td>';
+
+            let grandTotal = 0;
+
+            actieveWerknemers.forEach(w => {
+
+                days.forEach(day => {
+
+                    const data = urenBulkData[w.id][day];
+
+                    const val = data.uren;
+
+                    if (typeof val === 'number' && val > 0) grandTotal += val;
+
+                });
+
+            });
+
+            // Add empty cells for all days
+            allDays.forEach(() => html += '<td style="border: 1px solid #ddd; padding: 2px;"></td>');
+
+            html += `<td style="border: 1px solid #ddd; padding: 3px; text-align: center; background: #C5E0B4; font-size: 9px; font-weight: bold;">${grandTotal.toFixed(1)}</td></tr>`;
+
+            
+
             html += '</tbody></table></div>';
+
             
+
             // Legend
+
             html += '<div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-size: 12px;">';
+
             html += '<strong>Legende:</strong> ';
+
             html += '<span style="background: #E7E6E6; padding: 2px 6px; margin: 0 5px;">A = Aangepast</span>';
+
             html += '<span style="background: #FFC000; padding: 2px 6px; margin: 0 5px;">V = Vakantie</span>';
+
             html += '<span style="background: #D9E1F2; padding: 2px 6px; margin: 0 5px;">S = School</span>';
+
             html += '<span style="margin-left: 10px;">Of voer gewoon uren in (bijv. 8, 7.5, etc.)</span>';
+
             html += '</div>';
 
+
+
             document.getElementById('uren-bulk-list').innerHTML = html;
+
             setTimeout(() => setupCellSelection(), 100);
+
         }
+
+
 
         // Helper function to handle input (uren or afwezigheid)
+
         function handleUrenBulkInput(werknemerId, day, value) {
+
             if (!value || value.trim() === '') {
+
                 updateUrenBulkCell(werknemerId, day, 'uren', '');
+
                 updateUrenBulkCell(werknemerId, day, 'afwezigheid', '');
+
                 updateTotals();
+
                 return;
+
             }
+
             
+
             const upperValue = value.toUpperCase().trim();
+
             if (['A', 'V', 'S'].includes(upperValue)) {
+
                 // It's an afwezigheid - update data and cell directly
+
                 updateUrenBulkCell(werknemerId, day, 'afwezigheid', upperValue);
+
                 updateUrenBulkCell(werknemerId, day, 'uren', '');
+
                 // Update the cell directly without reloading
+
                 updateCellAfterInput(werknemerId, day, upperValue);
+
                 updateTotals();
+
             } else {
+
                 // It's uren
+
                 const numValue = parseFloat(value);
+
                 if (!isNaN(numValue) && numValue >= 0) {
+
                     updateUrenBulkCell(werknemerId, day, 'uren', numValue);
+
                     updateUrenBulkCell(werknemerId, day, 'afwezigheid', '');
+
                     updateTotals();
+
                 }
+
             }
+
         }
+
+
 
         // Update cell directly after input (without reloading table)
+
         function updateCellAfterInput(werknemerId, day, value) {
+
             // Find the input element for this cell
+
             const table = document.querySelector('.uren-bulk-table');
+
             if (!table) return;
+
             
+
             const rows = table.querySelectorAll('tbody tr');
+
             const werknemerIds = urenBulkWerknemers.length > 0 ? urenBulkWerknemers : Object.keys(urenBulkData);
+
             const werknemerIndex = werknemerIds.indexOf(werknemerId);
+
             
+
             if (werknemerIndex === -1) return;
+
             
+
             const row = rows[werknemerIndex];
+
             if (!row) return;
+
             
+
             const cells = row.querySelectorAll('td');
+
             // Day column is at index: day (0 is name, 1-31 are days)
+
             const dayCell = cells[day];
+
             if (!dayCell) return;
+
             
+
             const input = dayCell.querySelector('input');
+
             if (!input) return;
+
             
+
             // Update input value and color
+
             input.value = value;
+
             updateCellColor(input);
+
             
+
             // Update cell background style
+
             let bgColor = '#fff';
+
             if (value === 'V') bgColor = '#FFC000';
+
             else if (value === 'A') bgColor = '#E7E6E6';
+
             else if (value === 'S') bgColor = '#D9E1F2';
+
             dayCell.style.background = bgColor;
+
         }
+
+
 
         // Handle keyup for empty cells
+
         function handleUrenBulkInputKeyup(werknemerId, day, input) {
+
             if (!input) return;
+
             const value = input.value.toUpperCase().trim();
+
             if (['A', 'V', 'S'].includes(value)) {
+
                 // Update color immediately
+
                 updateCellColor(input);
+
                 // Update data immediately (don't wait for onchange)
+
                 updateUrenBulkCell(werknemerId, day, 'afwezigheid', value);
+
                 updateUrenBulkCell(werknemerId, day, 'uren', '');
+
                 // Update cell background
+
                 const cell = input.closest('td');
+
                 if (cell) {
+
                     let bgColor = '#fff';
+
                     if (value === 'V') bgColor = '#FFC000';
+
                     else if (value === 'A') bgColor = '#E7E6E6';
+
                     else if (value === 'S') bgColor = '#D9E1F2';
+
                     cell.style.background = bgColor;
+
                 }
+
                 updateTotals();
+
             } else if (value === '') {
+
                 // Clear color
+
                 input.style.background = '';
+
                 input.style.fontWeight = 'normal';
+
                 input.style.color = '';
+
                 const cell = input.closest('td');
+
                 if (cell) {
+
                     cell.style.background = '';
+
                 }
+
                 updateTotals();
+
             }
+
         }
+
+
 
         // Update cell color based on value
+
         function updateCellColor(input) {
+
             if (!input) return;
+
             const value = input.value.toUpperCase().trim();
+
             if (value === 'V') {
+
                 input.style.background = '#FFC000'; // Vakantie - geel
+
                 input.style.fontWeight = 'bold';
+
                 input.style.color = '#000';
+
             } else if (value === 'A') {
+
                 input.style.background = '#E7E6E6'; // Aangepast - grijs
+
                 input.style.fontWeight = 'bold';
+
                 input.style.color = '#000';
+
             } else if (value === 'S') {
+
                 input.style.background = '#D9E1F2'; // School - lichtblauw
+
                 input.style.fontWeight = 'bold';
+
                 input.style.color = '#000';
+
             } else {
+
                 input.style.background = '';
+
                 input.style.fontWeight = 'normal';
+
                 input.style.color = '';
+
             }
+
         }
+
+
 
         // Update cell color on keyup
+
         function updateCellColorOnKeyup(input) {
+
             if (!input) return;
+
             const value = input.value.toUpperCase().trim();
+
             if (['A', 'V', 'S'].includes(value)) {
+
                 updateCellColor(input);
+
             } else if (value === '') {
+
                 input.style.background = '';
+
                 input.style.fontWeight = 'normal';
+
                 input.style.color = '';
+
             }
+
         }
+
+
 
         // Update cell data
+
         function updateUrenBulkCell(werknemerId, day, type, value) {
+
             if (!urenBulkData[werknemerId]) urenBulkData[werknemerId] = {};
+
             if (!urenBulkData[werknemerId][day]) urenBulkData[werknemerId][day] = { uren: '', afwezigheid: '' };
+
             
+
             urenBulkData[werknemerId][day][type] = value;
+
             
+
             // If setting afwezigheid, clear uren and vice versa
+
             if (type === 'afwezigheid' && value) {
+
                 urenBulkData[werknemerId][day].uren = '';
+
             } else if (type === 'uren' && value !== '') {
+
                 urenBulkData[werknemerId][day].afwezigheid = '';
+
             }
+
         }
+
+
 
         // Excel-style drag-to-fill functionality
+
         let isDragging = false;
+
         let dragStartCell = null;
+
         let dragStartValue = null;
+
         let dragStartType = null; // 'uren' or 'afwezigheid'
 
+
+
         function startDragFill(event, werknemerId, day) {
+
             if (event.button !== 0) return; // Only left mouse button
+
             
+
             isDragging = true;
+
             dragStartCell = { werknemerId, day };
+
             
+
             const data = urenBulkData[werknemerId]?.[day];
+
             if (data) {
+
                 if (data.afwezigheid && data.afwezigheid !== '') {
+
                     dragStartValue = data.afwezigheid;
+
                     dragStartType = 'afwezigheid';
+
                 } else if (data.uren !== '' && data.uren !== null && typeof data.uren === 'number') {
+
                     dragStartValue = data.uren;
+
                     dragStartType = 'uren';
+
                 } else {
+
                     isDragging = false;
+
                     return;
+
                 }
+
             } else {
+
                 isDragging = false;
+
                 return;
+
             }
+
             
+
             event.preventDefault();
+
             document.addEventListener('mousemove', handleDragFillMove);
+
             document.addEventListener('mouseup', stopDragFill);
+
         }
+
+
 
         function handleDragFill(event, werknemerId, day) {
+
             if (!isDragging || !dragStartCell) return;
+
             
+
             // Check if we're dragging to a different cell
+
             if (dragStartCell.werknemerId === werknemerId && dragStartCell.day === day) return;
+
             
+
             // Fill cell (works both horizontally and vertically)
+
             fillCell(werknemerId, day);
+
         }
+
+
 
         function handleDragFillMove(event) {
+
             if (!isDragging) return;
+
             
+
             const target = event.target.closest('.uren-cell');
+
             if (!target) return;
+
             
+
             const werknemerId = target.getAttribute('data-werknemer-id');
+
             const day = parseInt(target.getAttribute('data-day'));
+
             
+
             if (werknemerId && day) {
+
                 handleDragFill(event, werknemerId, day);
+
             }
+
         }
+
+
 
         function stopDragFill() {
+
             isDragging = false;
+
             dragStartCell = null;
+
             dragStartValue = null;
+
             dragStartType = null;
+
             document.removeEventListener('mousemove', handleDragFillMove);
+
             document.removeEventListener('mouseup', stopDragFill);
+
             updateTotals();
+
         }
+
+
 
         function fillCell(werknemerId, day) {
+
             if (!dragStartValue || !dragStartType) return;
+
             
+
             // Check if day is in current month
+
             const maand = document.getElementById('uren-bulk-maand').value;
+
             if (!maand) return;
+
             const [year, month] = maand.split('-');
+
             const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
             if (day > daysInMonth) return; // Don't fill days outside month
+
             
+
             // Update data
+
             if (dragStartType === 'afwezigheid') {
+
                 updateUrenBulkCell(werknemerId, day, 'afwezigheid', dragStartValue);
+
                 updateUrenBulkCell(werknemerId, day, 'uren', '');
+
             } else {
+
                 updateUrenBulkCell(werknemerId, day, 'uren', dragStartValue);
+
                 updateUrenBulkCell(werknemerId, day, 'afwezigheid', '');
+
             }
+
             
+
             // Update UI immediately
+
             const cell = document.querySelector(`.uren-cell[data-werknemer-id="${werknemerId}"][data-day="${day}"]`);
+
             if (cell) {
+
                 const input = cell.querySelector('input');
+
                 if (input) {
+
                     if (dragStartType === 'afwezigheid') {
+
                         input.type = 'text';
+
                         input.value = dragStartValue;
+
                         input.maxLength = 1;
+
                         updateCellColor(input);
+
                         let bgColor = '#fff';
+
                         if (dragStartValue === 'V') bgColor = '#FFC000';
+
                         else if (dragStartValue === 'A') bgColor = '#E7E6E6';
+
                         else if (dragStartValue === 'S') bgColor = '#D9E1F2';
+
                         cell.style.background = bgColor;
+
                         // Update input background too
+
                         input.style.background = bgColor;
+
                         input.style.fontWeight = 'bold';
+
                     } else {
+
                         input.type = 'number';
+
                         input.value = dragStartValue;
+
                         cell.style.background = '';
+
                         input.style.background = '';
+
                         input.style.fontWeight = 'normal';
+
                     }
+
                 }
+
             }
+
         }
+
+
 
         // Update totals in the table - use data structure directly
+
         function updateTotals() {
+
             const maand = document.getElementById('uren-bulk-maand').value;
+
             if (!maand) return;
+
             
+
             const [year, month] = maand.split('-');
+
             const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
             const allDays = Array.from({ length: 31 }, (_, i) => i + 1);
+
             
+
             // Get table
+
             const table = document.querySelector('.uren-bulk-table');
+
             if (!table) return;
+
             
+
             const rows = table.querySelectorAll('tbody tr');
+
             const dataRows = Array.from(rows).slice(0, -1); // Exclude total row
+
             
+
             // Use stored werknemers list
+
             const werknemerIds = urenBulkWerknemers.length > 0 ? urenBulkWerknemers : Object.keys(urenBulkData);
+
             
+
             // Update per-werknemer totals using data structure
+
             dataRows.forEach((row, idx) => {
+
                 const werknemerId = werknemerIds[idx];
+
                 if (!werknemerId) return;
+
                 
+
                 const cells = row.querySelectorAll('td');
+
                 let totaal = 0;
+
                 
+
                 for (let day = 1; day <= daysInMonth; day++) {
+
                     const data = urenBulkData[werknemerId]?.[day];
+
                     if (data && typeof data.uren === 'number' && data.uren > 0) {
+
                         totaal += data.uren;
+
                     }
+
                 }
+
                 
+
                 // Update total cell (last cell)
+
                 const totalCell = cells[cells.length - 1];
+
                 if (totalCell) {
+
                     totalCell.innerHTML = `<strong>${totaal.toFixed(1)}</strong>`;
+
                 }
+
             });
+
             
+
             // Update per-day totals
+
             const totalRow = rows[rows.length - 1];
+
             if (totalRow) {
+
                 const cells = totalRow.querySelectorAll('td');
+
                 for (let day = 1; day <= 31; day++) {
+
                     const isInMonth = day <= daysInMonth;
+
                     let dagTotaal = 0;
+
                     if (isInMonth) {
+
                         werknemerIds.forEach(werknemerId => {
+
                             const data = urenBulkData[werknemerId]?.[day];
+
                             if (data && typeof data.uren === 'number' && data.uren > 0) {
+
                                 dagTotaal += data.uren;
+
                             }
+
                         });
+
                     }
+
                     if (cells[day]) {
+
                         cells[day].textContent = isInMonth ? dagTotaal.toFixed(1) : '';
+
                     }
+
                 }
+
                 
+
                 // Update grand total
+
                 let grandTotal = 0;
+
                 werknemerIds.forEach(werknemerId => {
+
                     for (let day = 1; day <= daysInMonth; day++) {
+
                         const data = urenBulkData[werknemerId]?.[day];
+
                         if (data && typeof data.uren === 'number' && data.uren > 0) {
+
                             grandTotal += data.uren;
+
                         }
+
                     }
+
                 });
+
                 const grandTotalCell = cells[cells.length - 1];
+
                 if (grandTotalCell) {
+
                     grandTotalCell.textContent = grandTotal.toFixed(1);
+
                 }
+
             }
+
         }
+
+
 
         async function saveUrenBulk() {
+
             const maand = document.getElementById('uren-bulk-maand').value;
+
             if (!maand) {
+
                 alert('Selecteer eerst een maand');
+
                 return;
+
             }
 
+
+
             const [year, month] = maand.split('-');
+
             let saved = 0;
+
             let deleted = 0;
 
+
+
             for (const werknemerId in urenBulkData) {
+
                 for (const day in urenBulkData[werknemerId]) {
+
                     const data = urenBulkData[werknemerId][day];
+
                     const datum = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+
                     const dateStr = datum.toISOString().split('T')[0];
+
                     
+
                     // Check if exists
+
                     const allUren = await window.db.get('uren');
+
                     const existing = allUren.find(u => 
+
                         u.werknemerId === werknemerId && 
+
                         new Date(u.datum).toISOString().split('T')[0] === dateStr
+
                     );
+
                     
+
                     const hasUren = data.uren !== '' && data.uren !== null && typeof data.uren === 'number' && data.uren > 0;
+
                     const hasAfwezigheid = data.afwezigheid && data.afwezigheid !== '';
+
                     
+
                     if (hasUren || hasAfwezigheid) {
+
                         // Save or update
+
                         const updateData = {};
+
                         if (hasUren) {
+
                             updateData.uren = data.uren;
+
                             updateData.afwezigheid = null;
+
                         } else if (hasAfwezigheid) {
+
                             updateData.afwezigheid = data.afwezigheid;
+
                             updateData.uren = null;
+
                         }
+
                         
+
                         if (existing) {
+
                             await window.db.update('uren', existing.id, updateData);
+
                         } else {
+
                             await window.db.add('uren', {
+
                                 werknemerId,
+
                                 datum: datum.toISOString(),
+
                                 ...updateData
+
                             });
+
                         }
+
                         saved++;
+
                     } else if (existing) {
+
                         // Delete if cell is empty
+
                         await window.db.delete('uren', existing.id);
+
                         deleted++;
+
                     }
+
                 }
+
             }
 
-            alert(`✅ ${saved} items opgeslagen${deleted > 0 ? `, ${deleted} verwijderd` : ''}!`);
+
+
+            alert(`${saved} items opgeslagen${deleted > 0 ? `, ${deleted} verwijderd` : ''}!`);
+
             loadUrenBulk();
+
         }
+
+
 
         // Kilometers Bulk Overzicht
+
         let kmBulkData = {};
 
+
+
         async function loadKmBulk() {
+
             const maand = document.getElementById('km-bulk-maand').value;
+
             if (!maand) {
+
                 document.getElementById('kilometers-bulk-list').innerHTML = '<div class="empty-state"><p>Selecteer een maand</p></div>';
+
                 return;
+
             }
 
+
+
             const werknemers = await window.db.get('werknemers');
+
             // Alleen koeriers tonen (werknemers met nummerplaat)
+
             const actieveWerknemers = werknemers.filter(w => w.actief !== false && w.nummerplaat && w.nummerplaat.trim() !== '');
+
             const allKm = await window.db.get('kilometers');
+
             const [year, month] = maand.split('-');
+
             
+
             kmBulkData = {};
+
             const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
             const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
+
+
             actieveWerknemers.forEach(w => {
+
                 kmBulkData[w.id] = {};
+
                 days.forEach(day => {
+
                     const date = new Date(parseInt(year), parseInt(month) - 1, day);
+
                     const dateStr = date.toISOString().split('T')[0];
+
                     const km = allKm.find(k => 
+
                         k.werknemerId === w.id && 
+
                         new Date(k.datum).toISOString().split('T')[0] === dateStr
+
                     );
+
                     kmBulkData[w.id][day] = km ? km.kilometers : '';
+
                 });
+
             });
 
-            let html = '<table style="font-size: 12px;"><thead><tr><th>Werknemer</th>';
-            days.forEach(day => html += `<th>${day}</th>`);
-            html += '<th>Totaal KM</th><th>Kosten (€0.40/km)</th></tr></thead><tbody>';
+
+
+            let html = '<table style="font-size: 9px; border-collapse: collapse; width: 100%; table-layout: fixed;" class="km-bulk-table"><thead><tr>';
+            html += '<th style="border: 1px solid #4472C4; padding: 3px; text-align: center; width: 110px; position: sticky; left: 0; background: #4472C4; color: white; font-weight: bold;">Werknemer</th>';
+            days.forEach(day => html += `<th style="border: 1px solid #4472C4; padding: 2px; text-align: center; width: 32px; background: #4472C4; color: white; font-weight: bold;">${day}</th>`);
+            html += '<th style="border: 1px solid #70AD47; padding: 3px; text-align: center; width: 60px; background: #70AD47; color: white; font-weight: bold;">Totaal KM</th>';
+            html += '<th style="border: 1px solid #70AD47; padding: 3px; text-align: center; width: 70px; background: #70AD47; color: white; font-weight: bold;">Kosten (&euro;0.40/km)</th></tr></thead><tbody>';
+
             
+
+            let grandTotalKm = 0;
+
+            let grandTotalCost = 0;
+
             actieveWerknemers.forEach(w => {
+
                 let totaal = 0;
-                html += `<tr><td><strong>${w.naam}</strong></td>`;
+
+                html += `<tr data-werknemer-id="${w.id}"><td style="border: 1px solid #ddd; padding: 3px; font-weight: bold; position: sticky; left: 0; background: white; z-index: 5; font-size: 9px;"><strong>${w.naam}</strong></td>`;
+
                 days.forEach(day => {
+
                     const value = kmBulkData[w.id][day] || '';
+
                     totaal += typeof value === 'number' ? value : 0;
-                    html += `<td><input type="number" value="${value}" data-werknemer-id="${w.id}" data-day="${day}" style="width: 60px; padding: 4px;" onchange="kmBulkData['${w.id}'][${day}] = parseFloat(this.value) || ''"></td>`;
+
+                    html += `<td style="border: 1px solid #ddd; padding: 1px;"><input type="number" value="${value}" data-werknemer-id="${w.id}" data-day="${day}" style="width: 100%; border: none; padding: 2px; text-align: center; font-size: 9px; height: 20px;" onchange="updateKmBulkCell('${w.id}', ${day}, this); updateKmBulkAllTotals();"></td>`;
+
                 });
-                html += `<td><strong>${totaal.toFixed(1)}</strong></td>`;
-                html += `<td><strong>€${(totaal * 0.40).toFixed(2)}</strong></td></tr>`;
+
+                grandTotalKm += totaal;
+
+                grandTotalCost += (totaal * 0.40);
+
+                html += `<td class="row-total-km" style="border: 1px solid #ddd; padding: 3px; text-align: center; font-weight: bold; background: #E2EFDA; font-size: 9px;"><strong>${totaal.toFixed(1)}</strong></td>`;
+
+                html += `<td class="row-total-cost" style="border: 1px solid #ddd; padding: 3px; text-align: center; font-weight: bold; background: #E2EFDA; font-size: 9px;"><strong>&euro;${(totaal * 0.40).toFixed(2)}</strong></td></tr>`;
+
             });
+
             
+
+            // Totaalrij
+
+            html += '<tr style="background-color: #D9E1F2; font-weight: bold;"><td style="border: 1px solid #ddd; padding: 3px; position: sticky; left: 0; background: #D9E1F2; z-index: 5; font-size: 9px;"><strong>TOTAAL</strong></td>';
+
+            days.forEach(() => html += '<td style="border: 1px solid #ddd; padding: 2px;"></td>');
+
+            html += `<td class="grand-total-km" style="border: 1px solid #ddd; padding: 3px; text-align: center; font-size: 9px;"><strong>${grandTotalKm.toFixed(1)}</strong></td>`;
+
+            html += `<td class="grand-total-cost" style="border: 1px solid #ddd; padding: 3px; text-align: center; font-size: 9px;"><strong>&euro;${grandTotalCost.toFixed(2)}</strong></td></tr>`;
+
+            
+
             html += '</tbody></table>';
+
             document.getElementById('kilometers-bulk-list').innerHTML = html;
+
             setTimeout(() => setupCellSelection(), 100);
+
         }
+
+
 
         function updateKmBulkRowTotals(row, werknemerId) {
+
             if (!row || !werknemerId) return;
+
             const inputs = row.querySelectorAll('input[type="number"][data-werknemer-id]');
+
             let totaal = 0;
+
             inputs.forEach(input => {
+
                 const value = parseFloat(input.value) || 0;
+
                 totaal += value;
+
             });
+
             const totalCell = row.querySelector('td:nth-last-child(2)');
+
             const costCell = row.querySelector('td:last-child');
+
             if (totalCell) {
+
                 totalCell.innerHTML = `<strong>${totaal.toFixed(1)}</strong>`;
+
             }
+
             if (costCell) {
-                costCell.innerHTML = `<strong>€${(totaal * 0.40).toFixed(2)}</strong>`;
+
+                costCell.innerHTML = `<strong>&euro;${(totaal * 0.40).toFixed(2)}</strong>`;
+
             }
+
         }
+
+
+
+        // Update single cell data
+
+        function updateKmBulkCell(werknemerId, day, input) {
+
+            const value = parseFloat(input.value) || '';
+
+            if (!kmBulkData[werknemerId]) kmBulkData[werknemerId] = {};
+
+            kmBulkData[werknemerId][day] = value;
+
+        }
+
+
+
+        // Update all totals (row totals and grand total)
+
+        function updateKmBulkAllTotals() {
+
+            const table = document.querySelector('.km-bulk-table');
+
+            if (!table) return;
+
+            const rows = table.querySelectorAll('tbody tr[data-werknemer-id]');
+
+            let grandTotalKm = 0;
+
+            let grandTotalCost = 0;
+
+            rows.forEach(row => {
+
+                const werknemerId = row.getAttribute('data-werknemer-id');
+
+                const inputs = row.querySelectorAll('input[type="number"][data-werknemer-id]');
+
+                let totaal = 0;
+
+                inputs.forEach(input => {
+
+                    const value = parseFloat(input.value) || 0;
+
+                    totaal += value;
+
+                });
+
+                const totalKmCell = row.querySelector('.row-total-km');
+
+                const totalCostCell = row.querySelector('.row-total-cost');
+
+                if (totalKmCell) {
+
+                    totalKmCell.innerHTML = `<strong>${totaal.toFixed(1)}</strong>`;
+
+                }
+
+                if (totalCostCell) {
+
+                    totalCostCell.innerHTML = `<strong>&euro;${(totaal * 0.40).toFixed(2)}</strong>`;
+
+                }
+
+                grandTotalKm += totaal;
+
+                grandTotalCost += (totaal * 0.40);
+
+            });
+
+            // Update grand total row
+
+            const grandTotalKmCell = table.querySelector('.grand-total-km');
+
+            const grandTotalCostCell = table.querySelector('.grand-total-cost');
+
+            if (grandTotalKmCell) {
+
+                grandTotalKmCell.innerHTML = `<strong>${grandTotalKm.toFixed(1)}</strong>`;
+
+            }
+
+            if (grandTotalCostCell) {
+
+                grandTotalCostCell.innerHTML = `<strong>&euro;${grandTotalCost.toFixed(2)}</strong>`;
+
+            }
+
+        }
+
+
 
         async function saveKmBulk() {
+
             const maand = document.getElementById('km-bulk-maand').value;
+
             if (!maand) {
+
                 alert('Selecteer eerst een maand');
+
                 return;
+
             }
 
+
+
             const [year, month] = maand.split('-');
+
             let saved = 0;
 
+
+
             for (const werknemerId in kmBulkData) {
+
                 for (const day in kmBulkData[werknemerId]) {
+
                     const km = kmBulkData[werknemerId][day];
+
                     if (km !== '' && km > 0) {
+
                         const datum = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+
                         const dateStr = datum.toISOString().split('T')[0];
+
                         
+
                         const allKm = await window.db.get('kilometers');
+
                         const existing = allKm.find(k => 
+
                             k.werknemerId === werknemerId && 
+
                             new Date(k.datum).toISOString().split('T')[0] === dateStr
+
                         );
+
                         
+
                         if (existing) {
+
                             await window.db.update('kilometers', existing.id, { kilometers: km });
+
                         } else {
+
                             await window.db.add('kilometers', {
+
                                 werknemerId,
+
                                 datum: datum.toISOString(),
+
                                 kilometers: km
+
                             });
+
                         }
+
                         saved++;
+
                     }
+
                 }
+
             }
 
-            alert(`✅ ${saved} kilometers opgeslagen!`);
+
+
+            alert(`${saved} kilometers opgeslagen!`);
+
             loadKmBulk();
+
         }
+
+
 
         // Helper function to get initials from name
+
         function getInitials(naam) {
+
             if (!naam) return '';
+
             const parts = naam.trim().split(' ');
+
             if (parts.length === 1) {
+
                 return parts[0].charAt(0).toUpperCase();
+
             }
+
             return parts.map(part => part.charAt(0).toUpperCase()).join('');
+
         }
+
+
 
         // Helper function to generate signature text (initials in cursive style)
+
         function generateSignatureText(naam) {
+
             const initials = getInitials(naam);
+
             return initials;
+
         }
+
+
 
         async function exportKmBulkToPDF() {
+
             const maand = document.getElementById('km-bulk-maand').value;
+
             if (!maand) {
+
                 alert('Selecteer eerst een maand');
+
                 return;
+
             }
+
+
 
             // Check if jsPDF is available
+
             if (typeof window.jspdf === 'undefined') {
+
                 // Load jsPDF from CDN
+
                 const script = document.createElement('script');
+
                 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+
                 script.onload = () => {
+
                     loadAutoTableAndExportKm(maand);
+
                 };
+
                 document.head.appendChild(script);
+
             } else {
+
                 loadAutoTableAndExportKm(maand);
+
             }
+
         }
+
+
 
         async function loadAutoTableAndExportKm(maand) {
+
             // Load autoTable plugin
+
             if (typeof window.jspdf !== 'undefined' && !window.jspdf.API.autoTable) {
+
                 const script = document.createElement('script');
+
                 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+
                 script.onload = () => {
+
                     generateKmBulkPDF(maand);
+
                 };
+
                 document.head.appendChild(script);
+
             } else {
+
                 generateKmBulkPDF(maand);
+
             }
+
         }
 
+
+
         async function generateKmBulkPDF(maand) {
+
             const { jsPDF } = window.jspdf || window;
+
             const [year, month] = maand.split('-');
+
             const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+
                               'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+
             const monthName = monthNames[parseInt(month) - 1];
+
             const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
             const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
+
+
             // Get werknemers data
+
             const werknemers = await window.db.get('werknemers');
+
             const actieveWerknemers = werknemers.filter(w => w.actief !== false && w.nummerplaat && w.nummerplaat.trim() !== '');
+
             
+
             // Create PDF
+
             const doc = new jsPDF('portrait', 'mm', 'a4');
+
             let isFirstPage = true;
 
+
+
             for (const werknemer of actieveWerknemers) {
+
                 // Check if we need a new page (not first page)
+
                 if (!isFirstPage) {
+
                     doc.addPage();
+
                 }
+
                 isFirstPage = false;
 
+
+
                 // Calculate totals for this werknemer
+
                 let totaalKm = 0;
+
                 const tableData = [];
+
                 
+
                 for (let day = 1; day <= daysInMonth; day++) {
+
                     const km = kmBulkData[werknemer.id] && kmBulkData[werknemer.id][day];
+
                     const kmValue = typeof km === 'number' && km > 0 ? km : 0;
+
                     totaalKm += kmValue;
+
                     
+
                     if (kmValue > 0) {
+
                         tableData.push([
+
                             day.toString(),
+
                             kmValue.toFixed(1) + ' km'
+
                         ]);
+
                     }
+
                 }
+
+
 
                 const totaalKosten = totaalKm * 0.40;
 
+
+
                 // Header
+
                 doc.setFontSize(18);
+
                 doc.text('Kilometer Declaratie', 14, 15);
+
                 doc.setFontSize(12);
+
                 doc.text(`${monthName} ${year}`, 14, 22);
 
+
+
                 // Werknemer info
+
                 doc.setFontSize(11);
+
                 doc.text(`Werknemer: ${werknemer.naam}`, 14, 30);
+
                 if (werknemer.nummerplaat) {
+
                     doc.text(`Nummerplaat: ${werknemer.nummerplaat}`, 14, 36);
+
                 }
+
+
 
                 // Table with kilometers
+
                 if (tableData.length > 0) {
+
                     doc.autoTable({
+
                         head: [['Dag', 'Kilometers']],
+
                         body: tableData,
+
                         startY: 42,
+
                         styles: { fontSize: 9 },
+
                         headStyles: { fillColor: [70, 130, 180], textColor: 255, fontStyle: 'bold' },
+
                         alternateRowStyles: { fillColor: [245, 245, 245] },
+
                         columnStyles: {
+
                             0: { cellWidth: 30, halign: 'center' },
+
                             1: { cellWidth: 50, halign: 'right' }
+
                         }
+
                     });
+
                 }
+
+
 
                 // Totals
+
                 const lastY = tableData.length > 0 ? doc.lastAutoTable.finalY + 10 : 42;
+
                 doc.setFontSize(11);
+
                 doc.setFontStyle('bold');
+
                 doc.text(`Totaal Kilometers: ${totaalKm.toFixed(1)} km`, 14, lastY);
+
                 doc.text(`Totaal Kosten: €${totaalKosten.toFixed(2)}`, 14, lastY + 6);
+
                 doc.setFontStyle('normal');
+
+
 
                 // Signature line
+
                 const signatureY = lastY + 20;
+
                 doc.setFontSize(10);
+
                 doc.line(14, signatureY, 100, signatureY);
+
                 doc.text('Handtekening:', 14, signatureY - 5);
+
                 
+
                 // Generate signature from initials
+
                 const initials = generateSignatureText(werknemer.naam);
+
                 doc.setFontSize(14);
+
                 doc.setFontStyle('italic');
+
                 doc.text(initials, 14, signatureY + 5);
+
                 doc.setFontStyle('normal');
+
                 doc.setFontSize(8);
+
                 doc.text(`(${werknemer.naam})`, 14, signatureY + 10);
+
                 
+
                 // Date
+
                 doc.setFontSize(8);
+
                 doc.text(`Datum: ${new Date().toLocaleDateString('nl-NL')}`, 14, signatureY + 15);
+
             }
+
+
 
             // Add footer to all pages
+
             const pageCount = doc.internal.getNumberOfPages();
+
             for (let i = 1; i <= pageCount; i++) {
+
                 doc.setPage(i);
+
                 doc.setFontSize(8);
+
                 doc.text(
+
                     `Pagina ${i} van ${pageCount} - Gemaakt op ${new Date().toLocaleDateString('nl-NL')}`,
+
                     14,
+
                     doc.internal.pageSize.height - 10
+
                 );
+
             }
 
+
+
             // Save PDF
+
             doc.save(`Kilometers_${monthName}_${year}.pdf`);
+
         }
+
+
 
         // Excel Import
+
         async function handleImport() {
+
             const fileInput = document.getElementById('import-file');
+
             const importType = document.getElementById('import-type').value;
+
             const resultDiv = document.getElementById('import-result');
+
             
+
             if (!fileInput.files || fileInput.files.length === 0) {
+
                 resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Selecteer eerst een bestand</div>';
+
                 return;
+
             }
 
+
+
             const file = fileInput.files[0];
+
             resultDiv.innerHTML = '<div class="alert alert-info">Importeren... Even geduld...</div>';
 
+
+
             try {
+
                 // Check if electronAPI is available
+
                 if (!window.electronAPI || !window.electronAPI.importExcel) {
+
                     resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Import functionaliteit niet beschikbaar. Start de app via Electron.</div>';
+
                     return;
+
                 }
+
+
 
                 // Read file as ArrayBuffer
+
                 const reader = new FileReader();
+
                 reader.onload = async (e) => {
+
                     try {
+
                         const arrayBuffer = e.target.result;
+
                         // Convert to base64
+
                         const bytes = new Uint8Array(arrayBuffer);
+
                         let binary = '';
+
                         for (let i = 0; i < bytes.byteLength; i++) {
+
                             binary += String.fromCharCode(bytes[i]);
+
                         }
+
                         const base64 = btoa(binary);
+
                         
+
                         console.log('Importing file:', file.name, 'Type:', importType);
+
                         
+
                         // Call IPC import
+
                         const result = await window.electronAPI.importExcel(base64, file.name, importType);
+
                         
+
                         console.log('Import result:', result);
+                        console.log('Imported counts:', result.imported);
+                        if (result.debug) {
+                            console.log('=== DEBUG INFO ===');
+                            console.log('Total rows:', result.debug.totalRows);
+                            console.log('Available columns:', result.debug.availableColumns);
+                            console.log('First row sample:', result.debug.firstRowSample);
+                            console.log('==================');
+                        }
                         
-                        resultDiv.innerHTML = `<div class="alert alert-success">
-                            <strong>✅ Import succesvol!</strong><br>
-                            Werknemers: ${result.imported.werknemers || 0}<br>
-                            ${importType === 'kilometers' ? `Kilometers: ${result.imported.kilometers || 0}` : `Uren: ${result.imported.uren || 0}`}
-                        </div>`;
+                        // Always log imported counts
+                        console.log('Werknemers imported:', result.imported.werknemers);
+                        console.log('Kilometers imported:', result.imported.kilometers);
+                        console.log('Uren imported:', result.imported.uren);
+
+                        
+
+                        if (result.imported.werknemers === 0 && result.imported.kilometers === 0 && result.imported.uren === 0) {
+                            const debugInfo = result.debug ? `
+                                <br><strong>Debug Informatie:</strong><br>
+                                Totaal rijen in Excel: ${result.debug.totalRows || 0}<br>
+                                Beschikbare kolommen: ${result.debug.availableColumns ? result.debug.availableColumns.join(', ') : 'Geen'}<br>
+                                ${result.debug.firstRowSample ? `<br>Eerste rij voorbeeld:<br><pre style="font-size: 10px; background: #f5f5f5; padding: 5px; overflow: auto;">${JSON.stringify(result.debug.firstRowSample, null, 2)}</pre>` : ''}
+                            ` : '';
+                            
+                            resultDiv.innerHTML = `<div class="alert" style="background: #fff3cd; color: #856404; border: 1px solid #ffeaa7;">
+                                <strong>Import voltooid, maar 0 items geïmporteerd!</strong><br>
+                                <br>
+                                <strong>Mogelijke oorzaken:</strong><br>
+                                1. Kolomnamen komen niet overeen (check hieronder voor beschikbare kolommen)<br>
+                                2. Werknemers bestaan niet in database (voor kilometers/uren import)<br>
+                                3. Datum format wordt niet herkend<br>
+                                4. Data is leeg of ongeldig<br>
+                                ${debugInfo}
+                                <br>
+                                <strong>Debug:</strong> Open DevTools (F12) en check de Console tab voor meer details.<br>
+                                <br>
+                                Werknemers: ${result.imported.werknemers || 0}<br>
+                                ${importType === 'kilometers' ? `Kilometers: ${result.imported.kilometers || 0}` : 
+                                  importType === 'uren-afwezigheden' ? `Uren/Afwezigheden: ${result.imported.uren || 0}` : 
+                                  `Uren: ${result.imported.uren || 0}`}
+                            </div>`;
+                        } else {
+                            resultDiv.innerHTML = `<div class="alert alert-success">
+                                <strong>Import succesvol!</strong><br>
+                                Werknemers: ${result.imported.werknemers || 0}<br>
+                                ${importType === 'kilometers' ? `Kilometers: ${result.imported.kilometers || 0}` : 
+                                  importType === 'uren-afwezigheden' ? `Uren/Afwezigheden: ${result.imported.uren || 0}` : 
+                                  `Uren: ${result.imported.uren || 0}`}
+                            </div>`;
+                        }
+
                         fileInput.value = '';
+
                         
+
                         // Reload data
+
                         await loadWerknemers();
+
                         if (currentPage === 'uren') await loadUren();
+
                         if (currentPage === 'kilometers') await loadKilometers();
+
                         if (currentPage === 'uren-bulk') await loadUrenBulk();
+
                         if (currentPage === 'kilometers-bulk') await loadKmBulk();
+
                     } catch (error) {
+
                         console.error('Import error:', error);
+
                         resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
-                            <strong>❌ Fout bij importeren:</strong><br>
+
+                            <strong>Fout bij importeren:</strong><br>
+
                             ${error.message || error.toString()}
+
                         </div>`;
+
                     }
+
                 };
+
                 reader.onerror = (error) => {
+
                     console.error('File read error:', error);
+
                     resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Fout bij lezen van bestand</div>';
+
                 };
+
                 reader.readAsArrayBuffer(file);
+
             } catch (error) {
+
                 console.error('Import error:', error);
+
                 resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">Fout: ${error.message || error.toString()}</div>`;
+
             }
+
         }
+
+
 
         // Dagontvangsten Bulk Overzicht - 3 kolommen: 6%, 12%, 21% BTW
+
         let dagontvangstenBulkData = {};
 
+
+
         async function loadDagontvangstenBulk() {
+
             const maand = document.getElementById('dagontvangsten-maand').value;
+
             if (!maand) {
+
                 document.getElementById('dagontvangsten-list').innerHTML = '<div class="empty-state"><p>Selecteer een maand</p></div>';
+
                 return;
+
             }
+
+
 
             const allOntvangsten = await window.db.get('dagontvangsten');
+
             const [year, month] = maand.split('-');
+
             
+
             dagontvangstenBulkData = {};
+
             const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
             const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
+
+
             // Initialize data structure - per dag: 6%, 12%, 21% BTW
+
             days.forEach(day => {
+
                 const date = new Date(parseInt(year), parseInt(month) - 1, day);
+
                 const dateStr = date.toISOString().split('T')[0];
+
                 const ontvangst = allOntvangsten.find(o => 
+
                     new Date(o.datum).toISOString().split('T')[0] === dateStr
+
                 );
+
                 
+
                 // Get values from categorieen (6, 12, 21) or initialize empty
+
                 dagontvangstenBulkData[day] = {
+
                     btw6: ontvangst && ontvangst.categorieen && ontvangst.categorieen['6'] ? ontvangst.categorieen['6'] : '',
+
                     btw12: ontvangst && ontvangst.categorieen && ontvangst.categorieen['12'] ? ontvangst.categorieen['12'] : '',
+
                     btw21: ontvangst && ontvangst.categorieen && ontvangst.categorieen['21'] ? ontvangst.categorieen['21'] : '',
+
                     opmerking: ontvangst ? (ontvangst.opmerking || '') : ''
+
                 };
+
             });
+
+
 
             // Render table - 3 kolommen: 6%, 12%, 21% BTW
+
             let html = '<div style="overflow-x: auto; margin-top: 20px;">';
+
             html += '<table style="font-size: 11px; border-collapse: collapse; min-width: 100%;" class="dagontvangsten-bulk-table">';
+
             
+
             // Header row
+
             html += '<thead><tr style="background: #4472C4; color: white; font-weight: bold;">';
+
             html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 80px; position: sticky; left: 0; background: #4472C4; z-index: 10;">Dag</th>';
+
             html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 120px; background: #70AD47;">6% BTW</th>';
+
             html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 120px; background: #70AD47;">12% BTW</th>';
+
             html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 120px; background: #70AD47;">21% BTW</th>';
+
             html += '</tr></thead><tbody>';
+
             
+
             // Data rows - one row per day (1-31)
+
             for (let day = 1; day <= 31; day++) {
+
                 const isInMonth = day <= daysInMonth;
+
                 const data = dagontvangstenBulkData[day] || { btw6: '', btw12: '', btw21: '', opmerking: '' };
+
                 
+
                 html += `<tr>`;
+
                 html += `<td style="border: 1px solid #ddd; padding: 6px; font-weight: bold; text-align: center; background: ${isInMonth ? '#f8f9fa' : '#f0f0f0'}; position: sticky; left: 0; z-index: 5;">${day}</td>`;
+
                 
+
                 if (isInMonth) {
+
                     // 6% BTW cell
+
                     html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center;">
+
                         <input type="number" value="${data.btw6 !== '' ? data.btw6 : ''}" step="0.01" min="0" 
+
                             data-day="${day}" data-btw="6"
+
                             style="width: 100%; border: none; text-align: center; padding: 4px;" 
+
                             onchange="updateDagontvangstBtwCell(${day}, 6, parseFloat(this.value) || ''); updateDagontvangstenTotals();">
+
                     </td>`;
+
                     
+
                     // 12% BTW cell
+
                     html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center;">
+
                         <input type="number" value="${data.btw12 !== '' ? data.btw12 : ''}" step="0.01" min="0" 
+
                             data-day="${day}" data-btw="12"
+
                             style="width: 100%; border: none; text-align: center; padding: 4px;" 
+
                             onchange="updateDagontvangstBtwCell(${day}, 12, parseFloat(this.value) || ''); updateDagontvangstenTotals();">
+
                     </td>`;
+
                     
+
                     // 21% BTW cell
+
                     html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center;">
+
                         <input type="number" value="${data.btw21 !== '' ? data.btw21 : ''}" step="0.01" min="0" 
+
                             data-day="${day}" data-btw="21"
+
                             style="width: 100%; border: none; text-align: center; padding: 4px;" 
+
                             onchange="updateDagontvangstBtwCell(${day}, 21, parseFloat(this.value) || ''); updateDagontvangstenTotals();">
+
                     </td>`;
+
                 } else {
+
                     // Days outside month - disabled
+
                     html += `<td style="border: 1px solid #ddd; padding: 6px; opacity: 0.3; background: #f0f0f0;"></td>`;
+
                     html += `<td style="border: 1px solid #ddd; padding: 6px; opacity: 0.3; background: #f0f0f0;"></td>`;
+
                     html += `<td style="border: 1px solid #ddd; padding: 6px; opacity: 0.3; background: #f0f0f0;"></td>`;
+
                 }
+
                 
+
                 html += '</tr>';
+
             }
+
             
+
             // Totalen rij
+
             html += '<tr style="background: #D9E1F2; font-weight: bold;">';
+
             html += '<td style="border: 1px solid #ddd; padding: 8px; position: sticky; left: 0; background: #D9E1F2; z-index: 5;">TOTAAL</td>';
+
             
+
             // Calculate totals for each BTW percentage
+
             let totaal6Incl = 0, totaal6Excl = 0, btw6 = 0;
+
             let totaal12Incl = 0, totaal12Excl = 0, btw12 = 0;
+
             let totaal21Incl = 0, totaal21Excl = 0, btw21 = 0;
+
             
+
             for (let day = 1; day <= daysInMonth; day++) {
+
                 const data = dagontvangstenBulkData[day];
+
                 if (data) {
+
                     // 6% BTW (inclusief bedrag)
+
                     if (typeof data.btw6 === 'number' && data.btw6 > 0) {
+
                         totaal6Incl += data.btw6;
+
                         totaal6Excl += data.btw6 / 1.06;
+
                         btw6 += data.btw6 - (data.btw6 / 1.06);
+
                     }
+
                     // 12% BTW (inclusief bedrag)
+
                     if (typeof data.btw12 === 'number' && data.btw12 > 0) {
+
                         totaal12Incl += data.btw12;
+
                         totaal12Excl += data.btw12 / 1.12;
+
                         btw12 += data.btw12 - (data.btw12 / 1.12);
+
                     }
+
                     // 21% BTW (inclusief bedrag)
+
                     if (typeof data.btw21 === 'number' && data.btw21 > 0) {
+
                         totaal21Incl += data.btw21;
+
                         totaal21Excl += data.btw21 / 1.21;
+
                         btw21 += data.btw21 - (data.btw21 / 1.21);
+
                     }
+
                 }
+
             }
+
             
+
             // 6% BTW totalen
+
             html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #E2EFDA;">
-                <div style="font-size: 10px;">Incl: €${totaal6Incl.toFixed(2)}</div>
-                <div style="font-size: 10px;">Excl: €${totaal6Excl.toFixed(2)}</div>
-                <div style="font-size: 10px; color: #d32f2f;">BTW: €${btw6.toFixed(2)}</div>
+
+                <div style="font-size: 10px;">Incl: &euro;${totaal6Incl.toFixed(2)}</div>
+
+                <div style="font-size: 10px;">Excl: &euro;${totaal6Excl.toFixed(2)}</div>
+
+                <div style="font-size: 10px; color: #d32f2f;">BTW: &euro;${btw6.toFixed(2)}</div>
+
             </td>`;
+
             
+
             // 12% BTW totalen
+
             html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #E2EFDA;">
-                <div style="font-size: 10px;">Incl: €${totaal12Incl.toFixed(2)}</div>
-                <div style="font-size: 10px;">Excl: €${totaal12Excl.toFixed(2)}</div>
-                <div style="font-size: 10px; color: #d32f2f;">BTW: €${btw12.toFixed(2)}</div>
+
+                <div style="font-size: 10px;">Incl: &euro;${totaal12Incl.toFixed(2)}</div>
+
+                <div style="font-size: 10px;">Excl: &euro;${totaal12Excl.toFixed(2)}</div>
+
+                <div style="font-size: 10px; color: #d32f2f;">BTW: &euro;${btw12.toFixed(2)}</div>
+
             </td>`;
+
             
+
             // 21% BTW totalen
+
             html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #E2EFDA;">
-                <div style="font-size: 10px;">Incl: €${totaal21Incl.toFixed(2)}</div>
-                <div style="font-size: 10px;">Excl: €${totaal21Excl.toFixed(2)}</div>
-                <div style="font-size: 10px; color: #d32f2f;">BTW: €${btw21.toFixed(2)}</div>
+
+                <div style="font-size: 10px;">Incl: &euro;${totaal21Incl.toFixed(2)}</div>
+
+                <div style="font-size: 10px;">Excl: &euro;${totaal21Excl.toFixed(2)}</div>
+
+                <div style="font-size: 10px; color: #d32f2f;">BTW: &euro;${btw21.toFixed(2)}</div>
+
             </td>`;
+
             
+
             html += '</tr>';
+
             
+
             // Totaal BTW rij
+
             const totaalBtw = btw6 + btw12 + btw21;
+
             const totaalIncl = totaal6Incl + totaal12Incl + totaal21Incl;
+
             const totaalExcl = totaal6Excl + totaal12Excl + totaal21Excl;
+
             
+
             html += '<tr style="background: #C5E0B4; font-weight: bold;">';
+
             html += '<td style="border: 1px solid #ddd; padding: 8px; position: sticky; left: 0; background: #C5E0B4; z-index: 5;">TOTAAL BTW</td>';
+
             html += `<td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: center;">
-                <div style="font-size: 11px;">Totaal Inclusief: €${totaalIncl.toFixed(2)}</div>
-                <div style="font-size: 11px;">Totaal Exclusief: €${totaalExcl.toFixed(2)}</div>
-                <div style="font-size: 12px; color: #d32f2f; font-weight: bold;">Totaal BTW: €${totaalBtw.toFixed(2)}</div>
+
+                <div style="font-size: 11px;">Totaal Inclusief: &euro;${totaalIncl.toFixed(2)}</div>
+
+                <div style="font-size: 11px;">Totaal Exclusief: &euro;${totaalExcl.toFixed(2)}</div>
+
+                <div style="font-size: 12px; color: #d32f2f; font-weight: bold;">Totaal BTW: &euro;${totaalBtw.toFixed(2)}</div>
+
             </td>`;
+
             html += '</tr>';
+
             
+
             html += '</tbody></table></div>';
+
+
 
             document.getElementById('dagontvangsten-list').innerHTML = html;
+
             setTimeout(() => setupCellSelection(), 100);
+
         }
+
+
 
         function updateDagontvangstBtwCell(day, btwPercentage, value) {
+
             if (!dagontvangstenBulkData[day]) {
+
                 dagontvangstenBulkData[day] = { btw6: '', btw12: '', btw21: '', opmerking: '' };
+
             }
+
             const key = `btw${btwPercentage}`;
+
             dagontvangstenBulkData[day][key] = value;
+
         }
+
+
 
         function updateDagontvangstenTotals() {
+
             const maand = document.getElementById('dagontvangsten-maand').value;
+
             if (!maand) return;
+
             
+
             const [year, month] = maand.split('-');
+
             const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
             
+
             const table = document.querySelector('.dagontvangsten-bulk-table');
+
             if (!table) return;
+
             
+
             // Calculate totals
+
             let totaal6Incl = 0, totaal6Excl = 0, btw6 = 0;
+
             let totaal12Incl = 0, totaal12Excl = 0, btw12 = 0;
+
             let totaal21Incl = 0, totaal21Excl = 0, btw21 = 0;
+
             
+
             for (let day = 1; day <= daysInMonth; day++) {
+
                 const data = dagontvangstenBulkData[day];
+
                 if (data) {
+
                     if (typeof data.btw6 === 'number' && data.btw6 > 0) {
+
                         totaal6Incl += data.btw6;
+
                         totaal6Excl += data.btw6 / 1.06;
+
                         btw6 += data.btw6 - (data.btw6 / 1.06);
+
                     }
+
                     if (typeof data.btw12 === 'number' && data.btw12 > 0) {
+
                         totaal12Incl += data.btw12;
+
                         totaal12Excl += data.btw12 / 1.12;
+
                         btw12 += data.btw12 - (data.btw12 / 1.12);
+
                     }
+
                     if (typeof data.btw21 === 'number' && data.btw21 > 0) {
+
                         totaal21Incl += data.btw21;
+
                         totaal21Excl += data.btw21 / 1.21;
+
                         btw21 += data.btw21 - (data.btw21 / 1.21);
+
                     }
+
                 }
+
             }
+
             
+
             // Update totalen row (second to last row)
+
             const rows = table.querySelectorAll('tbody tr');
+
             const totalRow = rows[rows.length - 2]; // Second to last (before BTW total row)
+
             if (totalRow) {
+
                 const cells = totalRow.querySelectorAll('td');
+
                 if (cells.length >= 4) {
+
                     // 6% BTW
+
                     cells[1].innerHTML = `
-                        <div style="font-size: 10px;">Incl: €${totaal6Incl.toFixed(2)}</div>
-                        <div style="font-size: 10px;">Excl: €${totaal6Excl.toFixed(2)}</div>
-                        <div style="font-size: 10px; color: #d32f2f;">BTW: €${btw6.toFixed(2)}</div>
+
+                        <div style="font-size: 10px;">Incl: &euro;${totaal6Incl.toFixed(2)}</div>
+
+                        <div style="font-size: 10px;">Excl: &euro;${totaal6Excl.toFixed(2)}</div>
+
+                        <div style="font-size: 10px; color: #d32f2f;">BTW: &euro;${btw6.toFixed(2)}</div>
+
                     `;
+
                     // 12% BTW
+
                     cells[2].innerHTML = `
-                        <div style="font-size: 10px;">Incl: €${totaal12Incl.toFixed(2)}</div>
-                        <div style="font-size: 10px;">Excl: €${totaal12Excl.toFixed(2)}</div>
-                        <div style="font-size: 10px; color: #d32f2f;">BTW: €${btw12.toFixed(2)}</div>
+
+                        <div style="font-size: 10px;">Incl: &euro;${totaal12Incl.toFixed(2)}</div>
+
+                        <div style="font-size: 10px;">Excl: &euro;${totaal12Excl.toFixed(2)}</div>
+
+                        <div style="font-size: 10px; color: #d32f2f;">BTW: &euro;${btw12.toFixed(2)}</div>
+
                     `;
+
                     // 21% BTW
+
                     cells[3].innerHTML = `
-                        <div style="font-size: 10px;">Incl: €${totaal21Incl.toFixed(2)}</div>
-                        <div style="font-size: 10px;">Excl: €${totaal21Excl.toFixed(2)}</div>
-                        <div style="font-size: 10px; color: #d32f2f;">BTW: €${btw21.toFixed(2)}</div>
+
+                        <div style="font-size: 10px;">Incl: &euro;${totaal21Incl.toFixed(2)}</div>
+
+                        <div style="font-size: 10px;">Excl: &euro;${totaal21Excl.toFixed(2)}</div>
+
+                        <div style="font-size: 10px; color: #d32f2f;">BTW: &euro;${btw21.toFixed(2)}</div>
+
                     `;
+
                 }
+
             }
+
             
+
             // Update BTW total row (last row)
+
             const btwTotalRow = rows[rows.length - 1];
+
             if (btwTotalRow) {
+
                 const totaalBtw = btw6 + btw12 + btw21;
+
                 const totaalIncl = totaal6Incl + totaal12Incl + totaal21Incl;
+
                 const totaalExcl = totaal6Excl + totaal12Excl + totaal21Excl;
+
                 
+
                 const cells = btwTotalRow.querySelectorAll('td');
+
                 if (cells.length >= 2) {
+
                     cells[1].innerHTML = `
-                        <div style="font-size: 11px;">Totaal Inclusief: €${totaalIncl.toFixed(2)}</div>
-                        <div style="font-size: 11px;">Totaal Exclusief: €${totaalExcl.toFixed(2)}</div>
-                        <div style="font-size: 12px; color: #d32f2f; font-weight: bold;">Totaal BTW: €${totaalBtw.toFixed(2)}</div>
+
+                        <div style="font-size: 11px;">Totaal Inclusief: &euro;${totaalIncl.toFixed(2)}</div>
+
+                        <div style="font-size: 11px;">Totaal Exclusief: &euro;${totaalExcl.toFixed(2)}</div>
+
+                        <div style="font-size: 12px; color: #d32f2f; font-weight: bold;">Totaal BTW: &euro;${totaalBtw.toFixed(2)}</div>
+
                     `;
+
                 }
+
             }
+
         }
+
+
 
         async function saveDagontvangstenBulk() {
+
             const maand = document.getElementById('dagontvangsten-maand').value;
+
             if (!maand) {
+
                 alert('Selecteer eerst een maand');
+
                 return;
+
             }
+
+
 
             const [year, month] = maand.split('-');
+
             const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
             let saved = 0;
 
+
+
             for (let day = 1; day <= daysInMonth; day++) {
+
                 const data = dagontvangstenBulkData[day];
+
                 if (!data) continue;
+
                 
+
                 // Check if any BTW value is filled
+
                 const hasData = (typeof data.btw6 === 'number' && data.btw6 > 0) ||
+
                                (typeof data.btw12 === 'number' && data.btw12 > 0) ||
+
                                (typeof data.btw21 === 'number' && data.btw21 > 0);
+
                 
+
                 if (hasData) {
+
                     const datum = new Date(parseInt(year), parseInt(month) - 1, day);
+
                     const dateStr = datum.toISOString().split('T')[0];
+
                     
+
                     // Calculate total (sum of all BTW percentages)
+
                     const totaal = (data.btw6 || 0) + (data.btw12 || 0) + (data.btw21 || 0);
+
                     
+
                     // Store categories as 6, 12, 21
+
                     const categorieen = {};
+
                     if (data.btw6 && data.btw6 > 0) categorieen['6'] = data.btw6;
+
                     if (data.btw12 && data.btw12 > 0) categorieen['12'] = data.btw12;
+
                     if (data.btw21 && data.btw21 > 0) categorieen['21'] = data.btw21;
+
                     
+
                     const allOntvangsten = await window.db.get('dagontvangsten');
+
                     const existing = allOntvangsten.find(o => 
+
                         new Date(o.datum).toISOString().split('T')[0] === dateStr
+
                     );
+
                     
+
                     if (existing) {
+
                         await window.db.update('dagontvangsten', existing.id, {
+
                             totaal: totaal,
+
                             categorieen: categorieen,
+
                             opmerking: data.opmerking || null
+
                         });
+
                     } else {
+
                         await window.db.add('dagontvangsten', {
+
                             datum: datum.toISOString(),
+
                             totaal: totaal,
+
                             categorieen: categorieen,
+
                             opmerking: data.opmerking || null
+
                         });
+
                     }
+
                     saved++;
+
                 }
+
             }
 
-            alert(`✅ ${saved} dagontvangsten opgeslagen!`);
+
+
+            alert(`Ô£à ${saved} dagontvangsten opgeslagen!`);
+
             loadDagontvangstenBulk();
+
         }
+
+
 
         async function exportDagontvangstenToPDF() {
+
             const maand = document.getElementById('dagontvangsten-maand').value;
+
             if (!maand) {
+
                 alert('Selecteer eerst een maand');
+
                 return;
+
             }
 
+
+
             // Check if jsPDF is available
+
             if (typeof window.jspdf === 'undefined') {
+
                 // Load jsPDF from CDN
+
                 const script = document.createElement('script');
+
                 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+
                 script.onload = () => {
+
                     loadAutoTableAndExportDagontvangsten(maand);
+
                 };
+
                 document.head.appendChild(script);
+
             } else {
+
                 loadAutoTableAndExportDagontvangsten(maand);
+
             }
+
         }
+
+
 
         async function loadAutoTableAndExportDagontvangsten(maand) {
+
             // Load autoTable plugin
+
             if (typeof window.jspdf !== 'undefined' && !window.jspdf.API.autoTable) {
+
                 const script = document.createElement('script');
+
                 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+
                 script.onload = () => {
+
                     generateDagontvangstenPDF(maand);
+
                 };
+
                 document.head.appendChild(script);
+
             } else {
+
                 generateDagontvangstenPDF(maand);
+
             }
+
         }
+
+
 
         function generateDagontvangstenPDF(maand) {
+
             const { jsPDF } = window.jspdf || window;
+
             const doc = new jsPDF('portrait', 'mm', 'a4');
+
             const [year, month] = maand.split('-');
+
             const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+
                               'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+
             const monthName = monthNames[parseInt(month) - 1];
+
             const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
             
+
             // Title
+
             doc.setFontSize(18);
+
             doc.text('Dagontvangsten Overzicht', 14, 15);
+
             doc.setFontSize(12);
+
             doc.text(`${monthName} ${year}`, 14, 22);
+
             
+
             // Calculate totals
+
             let totaal6Incl = 0, totaal6Excl = 0, btw6 = 0;
+
             let totaal12Incl = 0, totaal12Excl = 0, btw12 = 0;
+
             let totaal21Incl = 0, totaal21Excl = 0, btw21 = 0;
+
             
+
             // Prepare table data - only days with data
+
             const tableData = [];
+
             
+
             for (let day = 1; day <= daysInMonth; day++) {
+
                 const data = dagontvangstenBulkData[day];
+
                 if (!data) continue;
+
                 
+
                 const hasData = (typeof data.btw6 === 'number' && data.btw6 > 0) ||
+
                                (typeof data.btw12 === 'number' && data.btw12 > 0) ||
+
                                (typeof data.btw21 === 'number' && data.btw21 > 0);
+
                 
+
                 if (hasData) {
+
                     const btw6Val = typeof data.btw6 === 'number' && data.btw6 > 0 ? data.btw6 : 0;
+
                     const btw12Val = typeof data.btw12 === 'number' && data.btw12 > 0 ? data.btw12 : 0;
+
                     const btw21Val = typeof data.btw21 === 'number' && data.btw21 > 0 ? data.btw21 : 0;
+
                     
+
                     tableData.push([
+
                         day.toString(),
-                        btw6Val > 0 ? '€' + btw6Val.toFixed(2) : '',
-                        btw12Val > 0 ? '€' + btw12Val.toFixed(2) : '',
-                        btw21Val > 0 ? '€' + btw21Val.toFixed(2) : ''
+
+                        btw6Val > 0 ? '&euro;' + btw6Val.toFixed(2) : '',
+
+                        btw12Val > 0 ? '&euro;' + btw12Val.toFixed(2) : '',
+
+                        btw21Val > 0 ? '&euro;' + btw21Val.toFixed(2) : ''
+
                     ]);
+
                     
+
                     // Calculate totals
+
                     if (btw6Val > 0) {
+
                         totaal6Incl += btw6Val;
+
                         totaal6Excl += btw6Val / 1.06;
+
                         btw6 += btw6Val - (btw6Val / 1.06);
+
                     }
+
                     if (btw12Val > 0) {
+
                         totaal12Incl += btw12Val;
+
                         totaal12Excl += btw12Val / 1.12;
+
                         btw12 += btw12Val - (btw12Val / 1.12);
+
                     }
+
                     if (btw21Val > 0) {
+
                         totaal21Incl += btw21Val;
+
                         totaal21Excl += btw21Val / 1.21;
+
                         btw21 += btw21Val - (btw21Val / 1.21);
+
                     }
+
                 }
+
             }
+
             
+
             // Add summary rows
+
             tableData.push([
+
                 'TOTAAL 6%',
-                '€' + totaal6Incl.toFixed(2),
+
+                '&euro;' + totaal6Incl.toFixed(2),
+
                 '',
+
                 ''
+
             ]);
+
             tableData.push([
+
                 'TOTAAL 12%',
+
                 '',
-                '€' + totaal12Incl.toFixed(2),
+
+                '&euro;' + totaal12Incl.toFixed(2),
+
                 ''
+
             ]);
+
             tableData.push([
+
                 'TOTAAL 21%',
+
                 '',
+
                 '',
-                '€' + totaal21Incl.toFixed(2)
+
+                '&euro;' + totaal21Incl.toFixed(2)
+
             ]);
+
             
+
             const totaalIncl = totaal6Incl + totaal12Incl + totaal21Incl;
+
             const totaalExcl = totaal6Excl + totaal12Excl + totaal21Excl;
+
             const totaalBtw = btw6 + btw12 + btw21;
+
             
+
             tableData.push([
+
                 'TOTAAL',
-                '€' + totaalIncl.toFixed(2),
-                '€' + totaalExcl.toFixed(2),
-                '€' + totaalBtw.toFixed(2)
+
+                '&euro;' + totaalIncl.toFixed(2),
+
+                '&euro;' + totaalExcl.toFixed(2),
+
+                '&euro;' + totaalBtw.toFixed(2)
+
             ]);
+
             
+
             // Create table
+
             doc.autoTable({
+
                 head: [['Dag', '6% BTW (Incl.)', '12% BTW (Incl.)', '21% BTW (Incl.)']],
+
                 body: tableData.slice(0, -4), // All rows except summary rows
+
                 startY: 28,
+
                 styles: { fontSize: 9 },
+
                 headStyles: { fillColor: [70, 130, 180], textColor: 255, fontStyle: 'bold' },
+
                 alternateRowStyles: { fillColor: [245, 245, 245] },
+
                 columnStyles: {
+
                     0: { cellWidth: 20, halign: 'center' },
+
                     1: { cellWidth: 50, halign: 'right' },
+
                     2: { cellWidth: 50, halign: 'right' },
+
                     3: { cellWidth: 50, halign: 'right' }
+
                 }
+
             });
+
             
+
             // Add summary table
+
             const lastY = doc.lastAutoTable.finalY + 10;
+
             doc.setFontSize(12);
+
             doc.text('Totalen', 14, lastY);
+
             
+
             doc.autoTable({
+
                 head: [['BTW %', 'Inclusief BTW', 'Exclusief BTW', 'BTW Bedrag']],
+
                 body: [
-                    ['6%', '€' + totaal6Incl.toFixed(2), '€' + totaal6Excl.toFixed(2), '€' + btw6.toFixed(2)],
-                    ['12%', '€' + totaal12Incl.toFixed(2), '€' + totaal12Excl.toFixed(2), '€' + btw12.toFixed(2)],
-                    ['21%', '€' + totaal21Incl.toFixed(2), '€' + totaal21Excl.toFixed(2), '€' + btw21.toFixed(2)],
-                    ['TOTAAL', '€' + totaalIncl.toFixed(2), '€' + totaalExcl.toFixed(2), '€' + totaalBtw.toFixed(2)]
+
+                    ['6%', '&euro;' + totaal6Incl.toFixed(2), '&euro;' + totaal6Excl.toFixed(2), '&euro;' + btw6.toFixed(2)],
+
+                    ['12%', '&euro;' + totaal12Incl.toFixed(2), '&euro;' + totaal12Excl.toFixed(2), '&euro;' + btw12.toFixed(2)],
+
+                    ['21%', '&euro;' + totaal21Incl.toFixed(2), '&euro;' + totaal21Excl.toFixed(2), '&euro;' + btw21.toFixed(2)],
+
+                    ['TOTAAL', '&euro;' + totaalIncl.toFixed(2), '&euro;' + totaalExcl.toFixed(2), '&euro;' + totaalBtw.toFixed(2)]
+
                 ],
+
                 startY: lastY + 5,
+
                 styles: { fontSize: 9 },
+
                 headStyles: { fillColor: [70, 130, 180], textColor: 255, fontStyle: 'bold' },
+
                 columnStyles: {
+
                     0: { cellWidth: 30, halign: 'center', fontStyle: 'bold' },
+
                     1: { cellWidth: 50, halign: 'right' },
+
                     2: { cellWidth: 50, halign: 'right' },
+
                     3: { cellWidth: 50, halign: 'right', fontStyle: 'bold' }
+
                 },
+
                 didDrawCell: function(data) {
+
                     // Make last row bold
+
                     if (data.row.index === 3) {
+
                         doc.setFontStyle('bold');
+
                     }
+
                 }
+
             });
+
             
+
             // Add footer
+
             const pageCount = doc.internal.getNumberOfPages();
+
             for (let i = 1; i <= pageCount; i++) {
+
                 doc.setPage(i);
+
                 doc.setFontSize(8);
+
                 doc.text(
+
                     `Pagina ${i} van ${pageCount} - Gemaakt op ${new Date().toLocaleDateString('nl-NL')}`,
+
                     14,
+
                     doc.internal.pageSize.height - 10
+
                 );
+
             }
+
             
+
             // Save PDF
+
             doc.save(`Dagontvangsten_${monthName}_${year}.pdf`);
+
         }
+
+
 
         // Update import handler to support dagontvangsten
+
         async function handleImport() {
+
             const fileInput = document.getElementById('import-file');
+
             const importType = document.getElementById('import-type').value;
+
             const resultDiv = document.getElementById('import-result');
+
             
+
             if (!fileInput.files || fileInput.files.length === 0) {
+
                 resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Selecteer eerst een bestand</div>';
+
                 return;
+
             }
+
+
 
             const file = fileInput.files[0];
+
             resultDiv.innerHTML = '<div class="alert alert-info">Importeren... Even geduld...</div>';
 
+
+
             try {
+
                 if (!window.electronAPI) {
+
                     resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Import functionaliteit niet beschikbaar. Start de app via Electron.</div>';
+
                     return;
+
                 }
+
+
 
                 const reader = new FileReader();
+
                 reader.onload = async (e) => {
+
                     try {
+
                         const arrayBuffer = e.target.result;
+
                         const bytes = new Uint8Array(arrayBuffer);
+
                         let binary = '';
+
                         for (let i = 0; i < bytes.byteLength; i++) {
+
                             binary += String.fromCharCode(bytes[i]);
+
                         }
+
                         const base64 = btoa(binary);
+
                         
+
                         console.log('Importing file:', file.name, 'Type:', importType);
+
                         
+
                         let result;
+
                         if (importType === 'dagontvangsten') {
+
                             result = await window.electronAPI.importDagontvangsten(base64, file.name);
+
                         } else if (importType === 'gratis-cola') {
+
                             result = await window.electronAPI.importGratisCola(base64, file.name);
+
                         } else {
+
                             result = await window.electronAPI.importExcel(base64, file.name, importType);
+
                         }
+
                         
+
                         console.log('Import result:', result);
+
                         
-                        resultDiv.innerHTML = `<div class="alert alert-success">
-                            <strong>✅ Import succesvol!</strong><br>
-                            ${importType === 'dagontvangsten' 
-                                ? `Records: ${result.imported.records || 0}`
-                                : importType === 'gratis-cola'
+
+                        // Check if anything was imported
+                        const totalImported = (result.imported.werknemers || 0) + (result.imported.kilometers || 0) + (result.imported.uren || 0);
+                        
+                        if (totalImported === 0 && result.debug) {
+                            // Show warning with debug info
+                            const debugInfo = `
+                                <br><strong>Debug Informatie:</strong><br>
+                                Totaal rijen in Excel: ${result.debug.totalRows || 0}<br>
+                                Beschikbare kolommen: ${result.debug.availableColumns ? result.debug.availableColumns.join(', ') : 'Geen'}<br>
+                                ${result.debug.firstRowSample ? `<br>Eerste rij voorbeeld:<br><pre style="font-size: 10px; background: #f5f5f5; padding: 5px; overflow: auto; max-height: 200px;">${JSON.stringify(result.debug.firstRowSample, null, 2)}</pre>` : ''}
+                                <br><strong>Mogelijke oorzaken:</strong><br>
+                                1. Kolomnamen komen niet overeen<br>
+                                2. Werknemers bestaan niet in database<br>
+                                3. Datum format wordt niet herkend<br>
+                                4. Data is leeg of ongeldig<br>
+                            `;
+                            
+                            resultDiv.innerHTML = `<div class="alert" style="background: #fff3cd; color: #856404; border: 1px solid #ffeaa7;">
+                                <strong>⚠️ Import voltooid, maar 0 items geïmporteerd!</strong>
+                                ${debugInfo}
+                            </div>`;
+                        } else {
+                            // Show success
+                            resultDiv.innerHTML = `<div class="alert alert-success">
+                                <strong>✅ Import succesvol!</strong><br>
+                                ${importType === 'dagontvangsten' 
                                     ? `Records: ${result.imported.records || 0}`
-                                    : importType === 'kilometers' 
-                                        ? `Kilometers: ${result.imported.kilometers || 0}`
-                                        : `Werknemers: ${result.imported.werknemers || 0}, Uren: ${result.imported.uren || 0}`}
-                        </div>`;
+                                    : importType === 'gratis-cola'
+                                        ? `Records: ${result.imported.records || 0}`
+                                        : importType === 'kilometers' 
+                                            ? `Kilometers: ${result.imported.kilometers || 0}`
+                                            : `Werknemers: ${result.imported.werknemers || 0}, Uren/Afwezigheden: ${result.imported.uren || 0}`}
+                            </div>`;
+                        }
+
                         fileInput.value = '';
+
                         
+
                         // Reload data
+
                         await loadWerknemers();
+
                         if (currentPage === 'uren') await loadUren();
+
                         if (currentPage === 'kilometers') await loadKilometers();
+
                         if (currentPage === 'uren-bulk') await loadUrenBulk();
+
                         if (currentPage === 'kilometers-bulk') await loadKmBulk();
+
                         if (currentPage === 'dagontvangsten') await loadDagontvangstenBulk();
+
                         if (currentPage === 'gratis-cola') await loadGratisColaBulk();
+
                     } catch (error) {
+
                         console.error('Import error:', error);
+
                         resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
-                            <strong>❌ Fout bij importeren:</strong><br>
+
+                            <strong>Fout bij importeren:</strong><br>
+
                             ${error.message || error.toString()}
+
                         </div>`;
+
                     }
+
                 };
+
                 reader.onerror = (error) => {
+
                     console.error('File read error:', error);
+
                     resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Fout bij lezen van bestand</div>';
+
                 };
+
                 reader.readAsArrayBuffer(file);
+
             } catch (error) {
+
                 console.error('Import error:', error);
+
                 resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">Fout: ${error.message || error.toString()}</div>`;
+
             }
+
         }
+
+
 
         // Gratis Cola Bulk Overzicht - Exact zelfde structuur als Excel
+
         let gratisColaBulkData = {}; // { day: { month1: { gratis: value, verkocht: value, aankoopprijs: value }, ... } } }
 
+
+
         async function loadGratisColaBulk() {
+
             const jaar = document.getElementById('gratis-cola-jaar').value;
+
             if (!jaar) {
+
                 document.getElementById('gratis-cola-list').innerHTML = '<div class="empty-state"><p>Selecteer een jaar</p></div>';
+
                 return;
+
             }
+
+
 
             const allGratisCola = await window.db.get('gratisCola');
+
             const year = parseInt(jaar);
+
             
+
             gratisColaBulkData = {};
+
             const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+
                               'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+
             
+
             // Initialize data structure: { day: { month1: { gratis, verkocht, aankoopprijs }, ... } }
+
             for (let day = 1; day <= 31; day++) {
+
                 gratisColaBulkData[day] = {};
+
                 for (let month = 1; month <= 12; month++) {
+
                     const date = new Date(year, month - 1, day);
+
                     // Check if date is valid (e.g., Feb 30 doesn't exist)
+
                     if (date.getMonth() !== month - 1) {
+
                         gratisColaBulkData[day][month] = null; // Invalid date
+
                         continue;
+
                     }
+
                     
+
                     const dateStr = date.toISOString().split('T')[0];
+
                     const cola = allGratisCola.find(c => 
+
                         new Date(c.datum).toISOString().split('T')[0] === dateStr
+
                     );
+
                     
+
                     gratisColaBulkData[day][month] = cola ? {
+
                         gratis: cola.gratis || '',
+
                         verkocht: cola.verkocht || ''
+
                     } : { gratis: '', verkocht: '' };
+
                 }
+
             }
+
+
 
             // Render table - Exact zelfde structuur als Excel
+
             // Rows: Days 1-31, then totals row
+
             // Columns: Day | Month1 (date, value, 0, 0) | Month2 (date, value, 0, 0) | ...
+
             let html = '<div style="overflow-x: auto; margin-top: 20px;">';
+
             html += '<table style="font-size: 11px; border-collapse: collapse; min-width: 100%;" class="gratis-cola-bulk-table">';
+
             
+
             // Header row - not needed in this structure, but we'll add day column header
+
             html += '<thead><tr style="background: #4472C4; color: white; font-weight: bold;">';
+
             html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 60px; position: sticky; left: 0; background: #4472C4; z-index: 10;">Dag</th>';
+
             
+
             // Add headers for each month (4 columns per month: date, value, 0, 0)
+
             for (let month = 1; month <= 12; month++) {
+
                 const monthName = monthNames[month - 1];
+
                 html += `<th colspan="4" style="border: 1px solid #ddd; padding: 4px; text-align: center; min-width: 200px; background: #70AD47;">${monthName}</th>`;
+
             }
+
             html += '</tr>';
+
             
+
             // Sub-header row: Datum | Aantal | 0 | 0 for each month
+
             html += '<tr style="background: #D9E1F2; font-weight: bold;">';
+
             html += '<th style="border: 1px solid #ddd; padding: 4px; position: sticky; left: 0; background: #D9E1F2; z-index: 9;"></th>';
+
             for (let month = 1; month <= 12; month++) {
+
                 html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 9px;">Datum</th>';
+
                 html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 9px;">Aantal</th>';
+
                 html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 9px;">0</th>';
+
                 html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 9px;">0</th>';
+
             }
+
             html += '</tr></thead><tbody>';
+
             
+
             // Data rows - one row per day (1-31)
+
             for (let day = 1; day <= 31; day++) {
+
                 html += `<tr>`;
+
                 html += `<td style="border: 1px solid #ddd; padding: 6px; font-weight: bold; text-align: center; background: #f8f9fa; position: sticky; left: 0; z-index: 5;">${day}</td>`;
+
                 
+
                 for (let month = 1; month <= 12; month++) {
+
                     const date = new Date(year, month - 1, day);
+
                     // Check if date is valid
+
                     const isValidDate = date.getMonth() === month - 1;
+
                     const data = isValidDate ? (gratisColaBulkData[day][month] || { gratis: '', verkocht: '' }) : null;
+
                     
+
                     // Date cell (read-only, shows date)
+
                     const dateStr = isValidDate ? `${day}/${month}/${year}` : '';
+
                     html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 9px; background: ${isValidDate ? '#fff' : '#f0f0f0'}; width: 50px;">${dateStr}</td>`;
+
                     
+
                     // Three cells: Gratis gegeven (editable), Verkocht (editable), Totaal (calculated)
+
                     if (isValidDate && data) {
+
                         // Gratis gegeven
+
                         html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center; width: 45px;">
+
                             <input type="number" value="${data.gratis !== '' ? data.gratis : ''}" step="1" min="0" 
+
                                 data-day="${day}" data-month="${month}" data-type="gratis"
+
                                 style="width: 100%; border: none; text-align: center; padding: 2px; font-size: 10px; max-width: 45px;" 
+
                                 onchange="updateGratisColaCell(${day}, ${month}, 'gratis', parseFloat(this.value) || ''); updateGratisColaTotals();">
+
                         </td>`;
+
                         
+
                         // Verkocht
+
                         html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center; width: 45px;">
+
                             <input type="number" value="${data.verkocht !== '' ? data.verkocht : ''}" step="1" min="0" 
+
                                 data-day="${day}" data-month="${month}" data-type="verkocht"
+
                                 style="width: 100%; border: none; text-align: center; padding: 2px; font-size: 10px; max-width: 45px;" 
+
                                 onchange="updateGratisColaCell(${day}, ${month}, 'verkocht', parseFloat(this.value) || ''); updateGratisColaTotals();">
+
                         </td>`;
+
                         
+
                         // Totaal (calculated: verkocht * 2.30)
+
                         const totaal = (typeof data.verkocht === 'number' && data.verkocht > 0) ? (data.verkocht * 2.30).toFixed(2) : '';
+
                         html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 10px; background: #f0f0f0; font-weight: bold; width: 45px;">
+
                             ${totaal}
+
                         </td>`;
+
                     } else {
+
                         html += `<td style="border: 1px solid #ddd; padding: 4px; opacity: 0.3; background: #f0f0f0; width: 45px;"></td>`;
+
                         html += `<td style="border: 1px solid #ddd; padding: 4px; opacity: 0.3; background: #f0f0f0; width: 45px;"></td>`;
+
                         html += `<td style="border: 1px solid #ddd; padding: 4px; opacity: 0.3; background: #f0f0f0; width: 45px;"></td>`;
+
                     }
+
                 }
+
                 
+
                 html += '</tr>';
+
             }
+
             
+
             // Totalen row (row 32 in Excel)
+
             html += '<tr style="background: #D9E1F2; font-weight: bold;">';
+
             html += '<td style="border: 1px solid #ddd; padding: 6px; position: sticky; left: 0; background: #D9E1F2; z-index: 5;">TOTAAL</td>';
+
             
+
             for (let month = 1; month <= 12; month++) {
+
                 let monthTotalGratis = 0;
+
                 let monthTotalVerkocht = 0;
+
                 const daysInMonth = new Date(year, month, 0).getDate();
+
                 
+
                 for (let day = 1; day <= daysInMonth; day++) {
+
                     const data = gratisColaBulkData[day] && gratisColaBulkData[day][month];
+
                     if (data) {
+
                         if (typeof data.gratis === 'number' && data.gratis > 0) monthTotalGratis += data.gratis;
+
                         if (typeof data.verkocht === 'number' && data.verkocht > 0) monthTotalVerkocht += data.verkocht;
+
                     }
+
                 }
+
                 
+
                 const monthTotalTotaal = monthTotalVerkocht * 2.30;
+
                 
+
                 // Total row: empty date, totals for gratis, verkocht, calculated total
+
                 html += `<td style="border: 1px solid #ddd; padding: 4px; background: #D9E1F2;"></td>`;
+
                 html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #D9E1F2; width: 45px;">${monthTotalGratis}</td>`;
+
                 html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #D9E1F2; width: 45px;">${monthTotalVerkocht}</td>`;
+
                 html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #D9E1F2; width: 45px;">${monthTotalTotaal > 0 ? monthTotalTotaal.toFixed(2) : ''}</td>`;
+
             }
+
             html += '</tr>';
+
             
+
             // Grand total row (row 34 in Excel - shows total of all months)
+
             let grandTotalGratis = 0;
+
             let grandTotalVerkocht = 0;
+
             for (let month = 1; month <= 12; month++) {
+
                 const daysInMonth = new Date(year, month, 0).getDate();
+
                 for (let day = 1; day <= daysInMonth; day++) {
+
                     const data = gratisColaBulkData[day] && gratisColaBulkData[day][month];
+
                     if (data) {
+
                         if (typeof data.gratis === 'number' && data.gratis > 0) grandTotalGratis += data.gratis;
+
                         if (typeof data.verkocht === 'number' && data.verkocht > 0) grandTotalVerkocht += data.verkocht;
+
                     }
+
                 }
+
             }
+
             
+
             const grandTotalTotaal = grandTotalVerkocht * 2.30;
+
             
+
             html += '<tr style="background: #C5E0B4; font-weight: bold;">';
+
             html += `<td style="border: 1px solid #ddd; padding: 8px; position: sticky; left: 0; background: #C5E0B4; z-index: 5;">TOTAAL TOTAAL</td>`;
+
             html += `<td style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #C5E0B4;"></td>`;
+
             html += `<td style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #C5E0B4; width: 45px;">${grandTotalGratis}</td>`;
+
             html += `<td style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #C5E0B4; width: 45px;">${grandTotalVerkocht}</td>`;
+
             html += `<td style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #C5E0B4; width: 45px;">${grandTotalTotaal > 0 ? grandTotalTotaal.toFixed(2) : ''}</td>`;
+
             html += `<td colspan="${12 * 4 - 4}" style="border: 1px solid #ddd; padding: 8px; background: #C5E0B4;"></td>`;
+
             html += '</tr>';
+
             
+
             html += '</tbody></table></div>';
+
             
+
             document.getElementById('gratis-cola-list').innerHTML = html;
+
             
+
             // Calculate totals after table is rendered
+
             setTimeout(() => {
+
                 updateGratisColaTotals();
+
                 setupCellSelection();
+
             }, 100);
+
         }
+
+
 
         function updateGratisColaCell(day, month, type, value) {
+
             if (!gratisColaBulkData[day]) {
+
                 gratisColaBulkData[day] = {};
+
             }
+
             if (!gratisColaBulkData[day][month]) {
+
                 gratisColaBulkData[day][month] = { gratis: '', verkocht: '' };
+
             }
+
             gratisColaBulkData[day][month][type] = value;
+
             
+
             // Update calculated total cell in the table
+
             const table = document.querySelector('.gratis-cola-bulk-table');
+
             if (table && type === 'verkocht') {
+
                 const rows = table.querySelectorAll('tbody tr');
+
                 if (rows[day - 1]) {
+
                     const cells = rows[day - 1].querySelectorAll('td');
+
                     // Find the total cell for this month (date cell + gratis cell + verkocht cell + total cell)
+
                     const monthStartCell = 1 + (month - 1) * 4; // Skip day column, then 4 cells per month
+
                     const totalCellIdx = monthStartCell + 3; // date(0), gratis(1), verkocht(2), total(3)
+
                     if (cells[totalCellIdx]) {
+
                         const verkocht = typeof value === 'number' && value > 0 ? value : 0;
+
                         cells[totalCellIdx].textContent = verkocht > 0 ? (verkocht * 2.30).toFixed(2) : '';
+
                     }
+
                 }
+
             }
+
         }
+
+
 
         function updateGratisColaTotals() {
+
             const jaar = document.getElementById('gratis-cola-jaar').value;
+
             if (!jaar) return;
+
             
+
             const year = parseInt(jaar);
+
             const table = document.querySelector('.gratis-cola-bulk-table');
+
             if (!table) return;
+
             
+
             // Update all calculated total cells in data rows first
+
             const rows = table.querySelectorAll('tbody tr');
+
             for (let day = 1; day <= 31; day++) {
+
                 const row = rows[day - 1];
+
                 if (!row) continue;
+
                 
+
                 const cells = row.querySelectorAll('td');
+
                 for (let month = 1; month <= 12; month++) {
+
                     const monthStartCell = 1 + (month - 1) * 4; // Skip day column, then 4 cells per month
+
                     const verkochtInput = cells[monthStartCell + 2]?.querySelector('input');
+
                     const totalCell = cells[monthStartCell + 3];
+
                     
+
                     if (verkochtInput && totalCell) {
+
                         const verkocht = parseFloat(verkochtInput.value) || 0;
+
                         totalCell.textContent = verkocht > 0 ? (verkocht * 2.30).toFixed(2) : '';
+
                     }
+
                 }
+
             }
+
             
+
             // Update month totals (row 32)
+
             const totalRow = rows[31]; // Row 32 (index 31)
+
             
+
             if (totalRow) {
+
                 const cells = totalRow.querySelectorAll('td');
+
                 let cellIdx = 1; // Skip first cell (TOTAAL label)
+
                 
+
                 for (let month = 1; month <= 12; month++) {
+
                     let monthTotalGratis = 0;
+
                     let monthTotalVerkocht = 0;
+
                     const daysInMonth = new Date(year, month, 0).getDate();
+
                     
+
                     for (let day = 1; day <= daysInMonth; day++) {
+
                         const data = gratisColaBulkData[day] && gratisColaBulkData[day][month];
+
                         if (data) {
+
                             if (typeof data.gratis === 'number' && data.gratis > 0) monthTotalGratis += data.gratis;
+
                             if (typeof data.verkocht === 'number' && data.verkocht > 0) monthTotalVerkocht += data.verkocht;
+
                         }
+
                     }
+
                     
+
                     const monthTotalTotaal = monthTotalVerkocht * 2.30;
+
                     
+
                     // Skip date cell, update three value cells
+
                     cellIdx++; // date cell
+
                     if (cells[cellIdx]) cells[cellIdx].textContent = monthTotalGratis;
+
                     cellIdx++;
+
                     if (cells[cellIdx]) cells[cellIdx].textContent = monthTotalVerkocht;
+
                     cellIdx++;
+
                     if (cells[cellIdx]) cells[cellIdx].textContent = monthTotalTotaal > 0 ? monthTotalTotaal.toFixed(2) : '';
+
                     cellIdx++;
+
                 }
+
             }
+
             
+
             // Update grand total (row 34)
+
             let grandTotalGratis = 0;
+
             let grandTotalVerkocht = 0;
+
             for (let month = 1; month <= 12; month++) {
+
                 const daysInMonth = new Date(year, month, 0).getDate();
+
                 for (let day = 1; day <= daysInMonth; day++) {
+
                     const data = gratisColaBulkData[day] && gratisColaBulkData[day][month];
+
                     if (data) {
+
                         if (typeof data.gratis === 'number' && data.gratis > 0) grandTotalGratis += data.gratis;
+
                         if (typeof data.verkocht === 'number' && data.verkocht > 0) grandTotalVerkocht += data.verkocht;
+
                     }
+
                 }
+
             }
+
             
+
             const grandTotalTotaal = grandTotalVerkocht * 2.30;
+
             
+
             const grandTotalRow = rows[32]; // Row 34 (index 32)
+
             if (grandTotalRow) {
+
                 const cells = grandTotalRow.querySelectorAll('td');
+
                 if (cells.length > 2) {
+
                     cells[2].textContent = grandTotalGratis;
+
                     cells[3].textContent = grandTotalVerkocht;
+
                     cells[4].textContent = grandTotalTotaal > 0 ? grandTotalTotaal.toFixed(2) : '';
+
                 }
+
             }
+
         }
+
+
 
         async function saveGratisColaBulk() {
+
             const jaar = document.getElementById('gratis-cola-jaar').value;
+
             if (!jaar) {
+
                 alert('Selecteer eerst een jaar');
+
                 return;
+
             }
 
+
+
             const year = parseInt(jaar);
+
             let saved = 0;
 
+
+
             for (let day = 1; day <= 31; day++) {
+
                 for (let month = 1; month <= 12; month++) {
+
                     const date = new Date(year, month - 1, day);
+
                     // Check if date is valid
+
                     if (date.getMonth() !== month - 1) continue;
+
                     
+
                     const dateStr = date.toISOString().split('T')[0];
+
                     const data = gratisColaBulkData[day] && gratisColaBulkData[day][month];
+
                     
+
                     // Check if any value is filled
+
                     const hasData = data && (
+
                         (typeof data.gratis === 'number' && data.gratis > 0) ||
+
                         (typeof data.verkocht === 'number' && data.verkocht > 0)
+
                     );
+
                     
+
                     if (hasData) {
+
                         const allGratisCola = await window.db.get('gratisCola');
+
                         const existing = allGratisCola.find(c => 
+
                             new Date(c.datum).toISOString().split('T')[0] === dateStr
+
                         );
+
                         
+
                         if (existing) {
+
                             await window.db.update('gratisCola', existing.id, {
+
                                 gratis: data.gratis || 0,
+
                                 verkocht: data.verkocht || 0
+
                             });
+
                         } else {
+
                             await window.db.add('gratisCola', {
+
                                 datum: date.toISOString(),
+
                                 gratis: data.gratis || 0,
+
                                 verkocht: data.verkocht || 0
+
                             });
+
                         }
+
                         saved++;
+
                     }
+
                 }
+
             }
 
-            alert(`✅ ${saved} gratis cola records opgeslagen!`);
+
+
+            alert(`Ô£à ${saved} gratis cola records opgeslagen!`);
+
             loadGratisColaBulk();
+
         }
+
+
 
         async function exportGratisColaToPDF() {
+
             const jaar = document.getElementById('gratis-cola-jaar').value;
+
             if (!jaar) {
+
                 alert('Selecteer eerst een jaar');
+
                 return;
+
             }
+
+
 
             // Check if jsPDF is available
+
             if (typeof window.jspdf === 'undefined') {
+
                 // Load jsPDF from CDN
+
                 const script = document.createElement('script');
+
                 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+
                 script.onload = () => {
+
                     loadAutoTableAndExport(jaar);
+
                 };
+
                 document.head.appendChild(script);
+
             } else {
+
                 loadAutoTableAndExport(jaar);
+
             }
+
         }
+
+
 
         async function loadAutoTableAndExport(jaar) {
+
             // Load autoTable plugin
+
             if (typeof window.jspdf !== 'undefined' && !window.jspdf.API.autoTable) {
+
                 const script = document.createElement('script');
+
                 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+
                 script.onload = () => {
+
                     generatePDF(jaar);
+
                 };
+
                 document.head.appendChild(script);
+
             } else {
+
                 generatePDF(jaar);
+
             }
+
         }
+
+
 
         function generatePDF(jaar) {
+
             const { jsPDF } = window.jspdf || window;
+
             const doc = new jsPDF('landscape', 'mm', 'a4');
+
             const year = parseInt(jaar);
+
             
+
             // Title
+
             doc.setFontSize(18);
+
             doc.text('Gratis Cola Overzicht', 14, 15);
+
             doc.setFontSize(12);
+
             doc.text(`Jaar: ${year}`, 14, 22);
+
             
+
             // Prepare table data
+
             const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+
                               'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+
             
+
             // Data rows - summary per month
+
             const tableData = [];
+
             
+
             // Add summary rows per month
+
             for (let month = 1; month <= 12; month++) {
+
                 let monthTotalGratis = 0;
+
                 let monthTotalVerkocht = 0;
+
                 const daysInMonth = new Date(year, month, 0).getDate();
+
                 
+
                 for (let day = 1; day <= daysInMonth; day++) {
+
                     const data = gratisColaBulkData[day] && gratisColaBulkData[day][month];
+
                     if (data) {
+
                         if (typeof data.gratis === 'number' && data.gratis > 0) monthTotalGratis += data.gratis;
+
                         if (typeof data.verkocht === 'number' && data.verkocht > 0) monthTotalVerkocht += data.verkocht;
+
                     }
+
                 }
+
                 
+
                 const monthTotalTotaal = monthTotalVerkocht * 2.30;
+
                 
+
                 tableData.push([
+
                     monthNames[month - 1],
+
                     monthTotalGratis.toString(),
+
                     monthTotalVerkocht.toString(),
-                    monthTotalTotaal > 0 ? monthTotalTotaal.toFixed(2) + ' €' : '0.00 €'
+
+                    monthTotalTotaal > 0 ? monthTotalTotaal.toFixed(2) + ' &euro;' : '0.00 &euro;'
+
                 ]);
+
             }
+
             
+
             // Grand totals
+
             let grandTotalGratis = 0;
+
             let grandTotalVerkocht = 0;
+
             for (let month = 1; month <= 12; month++) {
+
                 const daysInMonth = new Date(year, month, 0).getDate();
+
                 for (let day = 1; day <= daysInMonth; day++) {
+
                     const data = gratisColaBulkData[day] && gratisColaBulkData[day][month];
+
                     if (data) {
+
                         if (typeof data.gratis === 'number' && data.gratis > 0) grandTotalGratis += data.gratis;
+
                         if (typeof data.verkocht === 'number' && data.verkocht > 0) grandTotalVerkocht += data.verkocht;
+
                     }
+
                 }
+
             }
+
             
+
             const grandTotalTotaal = grandTotalVerkocht * 2.30;
+
             
+
             // Add grand total row
+
             tableData.push([
+
                 'TOTAAL',
+
                 grandTotalGratis.toString(),
+
                 grandTotalVerkocht.toString(),
-                grandTotalTotaal > 0 ? grandTotalTotaal.toFixed(2) + ' €' : '0.00 €'
+
+                grandTotalTotaal > 0 ? grandTotalTotaal.toFixed(2) + ' &euro;' : '0.00 &euro;'
+
             ]);
+
             
+
             // Create table
+
             doc.autoTable({
-                head: [['Maand', 'Gratis Gegeven', 'Verkocht', 'Totaal (€2.30/stuk)']],
+
+                head: [['Maand', 'Gratis Gegeven', 'Verkocht', 'Totaal (&euro;2.30/stuk)']],
+
                 body: tableData,
+
                 startY: 28,
+
                 styles: { fontSize: 9 },
+
                 headStyles: { fillColor: [70, 130, 180], textColor: 255, fontStyle: 'bold' },
+
                 alternateRowStyles: { fillColor: [245, 245, 245] },
+
                 columnStyles: {
+
                     0: { cellWidth: 50 },
+
                     1: { cellWidth: 40, halign: 'right' },
+
                     2: { cellWidth: 40, halign: 'right' },
+
                     3: { cellWidth: 50, halign: 'right', fontStyle: 'bold' }
+
                 }
+
             });
+
             
+
             // Add footer
+
             const pageCount = doc.internal.getNumberOfPages();
+
             for (let i = 1; i <= pageCount; i++) {
+
                 doc.setPage(i);
+
                 doc.setFontSize(8);
+
                 doc.text(
+
                     `Pagina ${i} van ${pageCount} - Gemaakt op ${new Date().toLocaleDateString('nl-NL')}`,
+
                     14,
+
                     doc.internal.pageSize.height - 10
+
                 );
+
             }
+
             
+
             // Save PDF
+
             doc.save(`Gratis_Cola_${year}.pdf`);
+
         }
 
+
+
     </script>
+
 </body>
+
 </html>
+

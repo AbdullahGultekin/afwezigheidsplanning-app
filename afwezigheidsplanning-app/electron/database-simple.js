@@ -142,7 +142,8 @@ const databaseOps = {
       id,
       werknemerId: data.werknemerId,
       datum: data.datum,
-      uren: data.uren,
+      uren: data.uren || 0,
+      afwezigheid: data.afwezigheid || null,
       opmerking: data.opmerking || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -367,6 +368,9 @@ module.exports = {
   initDatabase,
   databaseOps
 };
+
+
+
 
 
 
