@@ -250,7 +250,8 @@ ipcMain.handle('import:excel', async (event, base64, fileName, importType) => {
     let imported = {
       werknemers: 0,
       kilometers: 0,
-      uren: 0
+      uren: 0,
+      records: 0  // For dagontvangsten and gratis-cola
     };
     
     // Helper function to find column value with flexible matching
@@ -576,6 +577,106 @@ ipcMain.handle('import:excel', async (event, base64, fileName, importType) => {
           console.error('Error importing uren-afwezigheden:', err, row);
         }
       }
+      }
+    } else if (importType === 'dagontvangsten') {
+      // Dagontvangsten import - use the existing handler
+      // For now, redirect to the separate handler logic
+      // Expected columns: Datum, BTW 6%, BTW 12%, BTW 21%, Opmerking (optional)
+      console.log('Importing dagontvangsten, total rows:', jsonData.length);
+      if (jsonData.length > 0) {
+        console.log('First row sample:', JSON.stringify(jsonData[0]));
+      }
+      
+      for (const row of jsonData) {
+        const datum = findColumnValue(row, ['Datum', 'datum', 'DATUM', 'Date', 'date', 'DATE']) || '';
+        const btw6 = parseFloat(findColumnValue(row, ['BTW 6%', 'btw 6%', '6%', '6']) || 0) || 0;
+        const btw12 = parseFloat(findColumnValue(row, ['BTW 12%', 'btw 12%', '12%', '12']) || 0) || 0;
+        const btw21 = parseFloat(findColumnValue(row, ['BTW 21%', 'btw 21%', '21%', '21']) || 0) || 0;
+        const opmerking = findColumnValue(row, ['Opmerking', 'opmerking', 'Comment', 'comment']) || null;
+        
+        if (!datum) continue;
+        
+        let dateObj;
+        if (datum instanceof Date) {
+          dateObj = datum;
+        } else if (typeof datum === 'number') {
+          dateObj = new Date((datum - 25569) * 86400 * 1000);
+        } else if (typeof datum === 'string') {
+          dateObj = new Date(datum);
+          if (isNaN(dateObj.getTime()) && datum.match(/^\d+(\.\d+)?$/)) {
+            const excelDate = parseFloat(datum);
+            dateObj = new Date((excelDate - 25569) * 86400 * 1000);
+          }
+        } else {
+          dateObj = new Date(datum);
+        }
+        
+        if (!dateObj || isNaN(dateObj.getTime())) continue;
+        
+        const totaal = btw6 + btw12 + btw21;
+        
+        if (totaal > 0) {
+          try {
+            databaseOps.createDagontvangst({
+              datum: dateObj.toISOString(),
+              totaal: totaal,
+              btw6: btw6,
+              btw12: btw12,
+              btw21: btw21,
+              opmerking: opmerking
+            });
+            imported.records++;
+            console.log('Imported dagontvangst:', dateObj.toISOString().split('T')[0], totaal);
+          } catch (err) {
+            console.error('Error importing dagontvangst:', err, row);
+          }
+        }
+      }
+    } else if (importType === 'gratis-cola') {
+      // Gratis Cola import
+      // Expected columns: Datum, Gratis, Verkocht
+      console.log('Importing gratis-cola, total rows:', jsonData.length);
+      if (jsonData.length > 0) {
+        console.log('First row sample:', JSON.stringify(jsonData[0]));
+      }
+      
+      for (const row of jsonData) {
+        const datum = findColumnValue(row, ['Datum', 'datum', 'DATUM', 'Date', 'date', 'DATE']) || '';
+        const gratis = parseFloat(findColumnValue(row, ['Gratis', 'gratis', 'GRATIS']) || 0) || 0;
+        const verkocht = parseFloat(findColumnValue(row, ['Verkocht', 'verkocht', 'VERKOCHT']) || 0) || 0;
+        
+        if (!datum) continue;
+        
+        let dateObj;
+        if (datum instanceof Date) {
+          dateObj = datum;
+        } else if (typeof datum === 'number') {
+          dateObj = new Date((datum - 25569) * 86400 * 1000);
+        } else if (typeof datum === 'string') {
+          dateObj = new Date(datum);
+          if (isNaN(dateObj.getTime()) && datum.match(/^\d+(\.\d+)?$/)) {
+            const excelDate = parseFloat(datum);
+            dateObj = new Date((excelDate - 25569) * 86400 * 1000);
+          }
+        } else {
+          dateObj = new Date(datum);
+        }
+        
+        if (!dateObj || isNaN(dateObj.getTime())) continue;
+        
+        if (gratis > 0 || verkocht > 0) {
+          try {
+            databaseOps.createGratisCola({
+              datum: dateObj.toISOString(),
+              gratis: gratis,
+              verkocht: verkocht
+            });
+            imported.records++;
+            console.log('Imported gratis cola:', dateObj.toISOString().split('T')[0], gratis, verkocht);
+          } catch (err) {
+            console.error('Error importing gratis cola:', err, row);
+          }
+        }
       }
     } else {
       console.log('Unknown import type:', importType);

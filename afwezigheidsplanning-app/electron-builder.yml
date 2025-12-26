@@ -1,8 +1,5 @@
 appId: com.pitapizza.afwezigheidsplanning
 productName: Afwezigheidsplanning App
-version: 1.0.0
-description: Werknemersafwezigheidsplanning App - Uren, Kilometers, Afwezigheden
-author: Pita Pizza Napoli
 copyright: Copyright © 2026 Pita Pizza Napoli
 
 directories:
@@ -39,22 +36,6 @@ win:
   forceCodeSigning: false
   signAndEditExecutable: false
   
-  # NSIS Installer configuratie
-  nsis:
-    oneClick: false
-    allowToChangeInstallationDirectory: true
-    createDesktopShortcut: true
-    createStartMenuShortcut: true
-    shortcutName: 'Afwezigheidsplanning App'
-    include: 'build/installer.nsh'
-    # installerIcon: 'build/icon.ico'  # Uncomment voor custom icon
-    # uninstallerIcon: 'build/icon.ico'
-    # installerHeaderIcon: 'build/icon.ico'
-    deleteAppDataOnUninstall: false
-    runAfterFinish: true
-    menuCategory: 'Business'
-    displayLanguageSelector: false
-    language: '1043' # Nederlands
 
 # macOS configuratie (voor toekomstig gebruik)
 mac:

@@ -382,6 +382,12 @@ const databaseOps = {
 
   createDagontvangst: (data) => {
     const id = generateId();
+    // Build categorieen object if not provided (for UI compatibility)
+    const categorieen = data.categorieen || {
+      '6': data.btw6 || 0,
+      '12': data.btw12 || 0,
+      '21': data.btw21 || 0
+    };
     const dagontvangst = {
       id,
       datum: data.datum,
@@ -390,6 +396,7 @@ const databaseOps = {
       btw12: data.btw12 || 0,
       btw21: data.btw21 || 0,
       opmerking: data.opmerking || null,
+      categorieen: categorieen,  // Add categorieen for UI compatibility
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -401,9 +408,17 @@ const databaseOps = {
   updateDagontvangst: (id, data) => {
     const index = dbData.dagontvangsten.findIndex(d => d.id === id);
     if (index !== -1) {
+      // Preserve or update categorieen
+      const existingCategorieen = dbData.dagontvangsten[index].categorieen || {};
+      const newCategorieen = data.categorieen || {
+        '6': data.btw6 !== undefined ? data.btw6 : existingCategorieen['6'] || 0,
+        '12': data.btw12 !== undefined ? data.btw12 : existingCategorieen['12'] || 0,
+        '21': data.btw21 !== undefined ? data.btw21 : existingCategorieen['21'] || 0
+      };
       dbData.dagontvangsten[index] = {
         ...dbData.dagontvangsten[index],
         ...data,
+        categorieen: newCategorieen,
         updatedAt: new Date().toISOString()
       };
       saveDatabase();

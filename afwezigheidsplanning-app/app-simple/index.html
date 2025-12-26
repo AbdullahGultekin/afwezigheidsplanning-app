@@ -824,7 +824,9 @@
 
     </div>
 
-
+    <!-- Load jsPDF libraries locally (before main script) -->
+    <script src="libs/jspdf.umd.min.js"></script>
+    <script src="libs/jspdf-autotable.min.js"></script>
 
     <script>
 
@@ -3246,34 +3248,26 @@
                 return;
             }
 
-            // Check if jsPDF is available
-            if (typeof window.jspdf === 'undefined') {
-                const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-                script.onload = () => {
-                    loadAutoTableAndExportUren(maand);
-                };
-                document.head.appendChild(script);
-            } else {
-                loadAutoTableAndExportUren(maand);
+            // Check if jsPDF is available (should be loaded via script tags)
+            if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+                alert('PDF bibliotheek niet geladen. Vernieuw de pagina en probeer opnieuw.');
+                return;
             }
-        }
 
-        async function loadAutoTableAndExportUren(maand) {
-            if (typeof window.jspdf !== 'undefined' && !window.jspdf.API.autoTable) {
-                const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
-                script.onload = () => {
-                    generateUrenBulkPDF(maand);
-                };
-                document.head.appendChild(script);
-            } else {
-                generateUrenBulkPDF(maand);
-            }
+            generateUrenBulkPDF(maand);
         }
 
         async function generateUrenBulkPDF(maand) {
-            const { jsPDF } = window.jspdf || window;
+            // jsPDF 3.x export structure
+            let jsPDF;
+            if (window.jspdf && window.jspdf.jsPDF) {
+                jsPDF = window.jspdf.jsPDF;
+            } else if (window.jsPDF) {
+                jsPDF = window.jsPDF;
+            } else {
+                alert('jsPDF library niet gevonden. Vernieuw de pagina.');
+                return;
+            }
             const [year, month] = maand.split('-');
             const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
                               'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
@@ -3887,67 +3881,33 @@
 
             }
 
-
-
-            // Check if jsPDF is available
+            // Check if jsPDF is available (should be loaded via script tags)
 
             if (typeof window.jspdf === 'undefined') {
 
-                // Load jsPDF from CDN
+                alert('PDF bibliotheek niet geladen. Vernieuw de pagina en probeer opnieuw.');
 
-                const script = document.createElement('script');
-
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-
-                script.onload = () => {
-
-                    loadAutoTableAndExportKm(maand);
-
-                };
-
-                document.head.appendChild(script);
-
-            } else {
-
-                loadAutoTableAndExportKm(maand);
+                return;
 
             }
 
-        }
-
-
-
-        async function loadAutoTableAndExportKm(maand) {
-
-            // Load autoTable plugin
-
-            if (typeof window.jspdf !== 'undefined' && !window.jspdf.API.autoTable) {
-
-                const script = document.createElement('script');
-
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
-
-                script.onload = () => {
-
-                    generateKmBulkPDF(maand);
-
-                };
-
-                document.head.appendChild(script);
-
-            } else {
-
-                generateKmBulkPDF(maand);
-
-            }
+            generateKmBulkPDF(maand);
 
         }
 
 
 
         async function generateKmBulkPDF(maand) {
-
-            const { jsPDF } = window.jspdf || window;
+            // jsPDF 3.x export structure
+            let jsPDF;
+            if (window.jspdf && window.jspdf.jsPDF) {
+                jsPDF = window.jspdf.jsPDF;
+            } else if (window.jsPDF) {
+                jsPDF = window.jsPDF;
+            } else {
+                alert('jsPDF library niet gevonden. Vernieuw de pagina.');
+                return;
+            }
 
             const [year, month] = maand.split('-');
 
@@ -4095,13 +4055,13 @@
 
                 doc.setFontSize(11);
 
-                doc.setFontStyle('bold');
+                doc.setFont('helvetica', 'bold');
 
                 doc.text(`Totaal Kilometers: ${totaalKm.toFixed(1)} km`, 14, lastY);
 
                 doc.text(`Totaal Kosten: €${totaalKosten.toFixed(2)}`, 14, lastY + 6);
 
-                doc.setFontStyle('normal');
+                doc.setFont('helvetica', 'normal');
 
 
 
@@ -4123,11 +4083,11 @@
 
                 doc.setFontSize(14);
 
-                doc.setFontStyle('italic');
+                doc.setFont('helvetica', 'italic');
 
                 doc.text(initials, 14, signatureY + 5);
 
-                doc.setFontStyle('normal');
+                doc.setFont('helvetica', 'normal');
 
                 doc.setFontSize(8);
 
@@ -4250,10 +4210,33 @@
                         
 
                         // Call IPC import
+                        let result;
+                        try {
+                            result = await window.electronAPI.importExcel(base64, file.name, importType);
+                        } catch (ipcError) {
+                            console.error('IPC call error:', ipcError);
+                            resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
+                                <strong>Fout bij communicatie met Electron:</strong><br>
+                                ${ipcError.message || ipcError.toString()}<br>
+                                <br>
+                                Probeer de app opnieuw te starten.
+                            </div>`;
+                            return;
+                        }
 
-                        const result = await window.electronAPI.importExcel(base64, file.name, importType);
-
+                        // Check if result is valid
+                        if (!result) {
+                            resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Geen resultaat ontvangen van import functie</div>';
+                            return;
+                        }
                         
+                        if (!result.success) {
+                            resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
+                                <strong>Import gefaald:</strong><br>
+                                ${result.error || 'Onbekende fout'}
+                            </div>`;
+                            return;
+                        }
 
                         console.log('Import result:', result);
                         console.log('Imported counts:', result.imported);
@@ -4266,9 +4249,9 @@
                         }
                         
                         // Always log imported counts
-                        console.log('Werknemers imported:', result.imported.werknemers);
-                        console.log('Kilometers imported:', result.imported.kilometers);
-                        console.log('Uren imported:', result.imported.uren);
+                        console.log('Werknemers imported:', result.imported?.werknemers || 0);
+                        console.log('Kilometers imported:', result.imported?.kilometers || 0);
+                        console.log('Uren imported:', result.imported?.uren || 0);
 
                         
 
@@ -4347,17 +4330,45 @@
 
                     console.error('File read error:', error);
 
-                    resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Fout bij lezen van bestand</div>';
+                    resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
+                        <strong>Fout bij lezen van bestand:</strong><br>
+                        ${error.message || error.toString()}<br>
+                        <br>
+                        Controleer of het bestand niet beschadigd is en probeer opnieuw.
+                    </div>`;
 
                 };
 
-                reader.readAsArrayBuffer(file);
+                reader.onabort = () => {
+                    resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Bestand lezen geannuleerd</div>';
+                };
+
+                try {
+                    reader.readAsArrayBuffer(file);
+                } catch (error) {
+                    console.error('Error starting file read:', error);
+                    resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
+                        <strong>Fout bij starten van import:</strong><br>
+                        ${error.message || error.toString()}
+                    </div>`;
+                }
 
             } catch (error) {
 
                 console.error('Import error:', error);
+                console.error('Error stack:', error.stack);
 
-                resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">Fout: ${error.message || error.toString()}</div>`;
+                resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
+                    <strong>Fout bij importeren:</strong><br>
+                    ${error.message || error.toString()}<br>
+                    <br>
+                    <strong>Mogelijke oorzaken:</strong><br>
+                    - Bestand is niet een geldig Excel bestand (.xlsx of .xls)<br>
+                    - Bestand is te groot<br>
+                    - Bestand is beschadigd<br>
+                    <br>
+                    Open DevTools (F12) en check de Console tab voor meer details.
+                </div>`;
 
             }
 
@@ -5064,81 +5075,64 @@
 
             }
 
+            // Check if jsPDF is available (should be loaded via script tags)
 
+            if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
 
-            // Check if jsPDF is available
+                alert('PDF bibliotheek niet geladen. Vernieuw de pagina en probeer opnieuw.');
 
-            if (typeof window.jspdf === 'undefined') {
-
-                // Load jsPDF from CDN
-
-                const script = document.createElement('script');
-
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-
-                script.onload = () => {
-
-                    loadAutoTableAndExportDagontvangsten(maand);
-
-                };
-
-                document.head.appendChild(script);
-
-            } else {
-
-                loadAutoTableAndExportDagontvangsten(maand);
+                return;
 
             }
+
+            generateDagontvangstenPDF(maand);
 
         }
 
 
 
-        async function loadAutoTableAndExportDagontvangsten(maand) {
-
-            // Load autoTable plugin
-
-            if (typeof window.jspdf !== 'undefined' && !window.jspdf.API.autoTable) {
-
-                const script = document.createElement('script');
-
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
-
-                script.onload = () => {
-
-                    generateDagontvangstenPDF(maand);
-
-                };
-
-                document.head.appendChild(script);
-
+        async function generateDagontvangstenPDF(maand) {
+            // jsPDF 3.x export structure
+            let jsPDF;
+            if (window.jspdf && window.jspdf.jsPDF) {
+                jsPDF = window.jspdf.jsPDF;
+            } else if (window.jsPDF) {
+                jsPDF = window.jsPDF;
             } else {
-
-                generateDagontvangstenPDF(maand);
-
+                alert('jsPDF library niet gevonden. Vernieuw de pagina.');
+                return;
             }
 
-        }
-
-
-
-        function generateDagontvangstenPDF(maand) {
-
-            const { jsPDF } = window.jspdf || window;
+            // Load data from database
+            const allOntvangsten = await window.db.get('dagontvangsten');
+            const [year, month] = maand.split('-');
+            const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+            
+            // Build dagontvangstenBulkData from database (same structure as loadDagontvangstenBulk)
+            const dagontvangstenBulkData = {};
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(parseInt(year), parseInt(month) - 1, day);
+                const dateStr = date.toISOString().split('T')[0];
+                const ontvangst = allOntvangsten.find(o => 
+                    new Date(o.datum).toISOString().split('T')[0] === dateStr
+                );
+                
+                // Get values from categorieen (6, 12, 21) or initialize empty
+                dagontvangstenBulkData[day] = {
+                    btw6: ontvangst && ontvangst.categorieen && ontvangst.categorieen['6'] ? ontvangst.categorieen['6'] : '',
+                    btw12: ontvangst && ontvangst.categorieen && ontvangst.categorieen['12'] ? ontvangst.categorieen['12'] : '',
+                    btw21: ontvangst && ontvangst.categorieen && ontvangst.categorieen['21'] ? ontvangst.categorieen['21'] : '',
+                    opmerking: ontvangst ? (ontvangst.opmerking || '') : ''
+                };
+            }
 
             const doc = new jsPDF('portrait', 'mm', 'a4');
-
-            const [year, month] = maand.split('-');
 
             const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
 
                               'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
 
             const monthName = monthNames[parseInt(month) - 1];
-
-            const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
-
-            
 
             // Title
 
@@ -5404,7 +5398,7 @@
 
                     if (data.row.index === 3) {
 
-                        doc.setFontStyle('bold');
+                        doc.setFont('helvetica', 'bold');
 
                     }
 
@@ -6086,67 +6080,33 @@
 
             }
 
-
-
-            // Check if jsPDF is available
+            // Check if jsPDF is available (should be loaded via script tags)
 
             if (typeof window.jspdf === 'undefined') {
 
-                // Load jsPDF from CDN
+                alert('PDF bibliotheek niet geladen. Vernieuw de pagina en probeer opnieuw.');
 
-                const script = document.createElement('script');
-
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-
-                script.onload = () => {
-
-                    loadAutoTableAndExport(jaar);
-
-                };
-
-                document.head.appendChild(script);
-
-            } else {
-
-                loadAutoTableAndExport(jaar);
+                return;
 
             }
 
-        }
-
-
-
-        async function loadAutoTableAndExport(jaar) {
-
-            // Load autoTable plugin
-
-            if (typeof window.jspdf !== 'undefined' && !window.jspdf.API.autoTable) {
-
-                const script = document.createElement('script');
-
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
-
-                script.onload = () => {
-
-                    generatePDF(jaar);
-
-                };
-
-                document.head.appendChild(script);
-
-            } else {
-
-                generatePDF(jaar);
-
-            }
+            generatePDF(jaar);
 
         }
 
 
 
         function generatePDF(jaar) {
-
-            const { jsPDF } = window.jspdf || window;
+            // jsPDF 3.x export structure
+            let jsPDF;
+            if (window.jspdf && window.jspdf.jsPDF) {
+                jsPDF = window.jspdf.jsPDF;
+            } else if (window.jsPDF) {
+                jsPDF = window.jsPDF;
+            } else {
+                alert('jsPDF library niet gevonden. Vernieuw de pagina.');
+                return;
+            }
 
             const doc = new jsPDF('landscape', 'mm', 'a4');
 
