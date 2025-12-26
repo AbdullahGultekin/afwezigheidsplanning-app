@@ -196,6 +196,26 @@
 
         }
 
+        /* Hide number input spinners */
+
+        input[type="number"]::-webkit-inner-spin-button,
+
+        input[type="number"]::-webkit-outer-spin-button {
+
+            -webkit-appearance: none;
+
+            margin: 0;
+
+        }
+
+        input[type="number"] {
+
+            -moz-appearance: textfield;
+
+            appearance: textfield;
+
+        }
+
         .form-group {
 
             margin-bottom: 15px;
@@ -614,11 +634,13 @@
 
                 <button class="btn btn-success" onclick="saveUrenBulk()">Alle Uren Opslaan</button>
 
+                <button class="btn btn-primary" onclick="exportUrenBulkToPDF()">Exporteer naar PDF</button>
+
                 <button class="btn btn-warning" onclick="clearSelectedCells('uren-bulk')" title="Wis geselecteerde cellen">Wis Geselecteerde Cellen</button>
 
             </div>
 
-            <div id="uren-bulk-list" style="overflow-x: auto;"></div>
+            <div id="uren-bulk-list" style="overflow-x: auto; max-width: 100%;"></div>
 
         </div>
 
@@ -648,7 +670,7 @@
 
             </div>
 
-            <div id="kilometers-bulk-list" style="overflow-x: auto;"></div>
+            <div id="kilometers-bulk-list" style="overflow-x: auto; max-width: 100%;"></div>
 
         </div>
 
@@ -2112,7 +2134,7 @@
 
             let html = '<div style="margin-top: 20px;">';
 
-            html += '<table style="font-size: 9px; border-collapse: collapse; width: 100%; table-layout: fixed;" class="uren-bulk-table">';
+            html += '<table style="font-size: 10px; border-collapse: collapse; width: 100%; table-layout: fixed; max-width: 100%;" class="uren-bulk-table">';
 
             
 
@@ -2124,33 +2146,24 @@
                 return dayNames[date.getDay()];
             };
 
-            // Header row 1: Month name and days (always 1-31) - Compact Excel style
+            // Header row: Combined day number and day name in one cell
             html += '<thead><tr style="background: #4472C4; color: white; font-weight: bold;">';
-            html += '<th style="border: 1px solid #4472C4; padding: 3px; text-align: center; width: 110px; position: sticky; left: 0; background: #4472C4; z-index: 10;" rowspan="2">Naam Werknemer</th>';
-            html += '<th style="border: 1px solid #4472C4; padding: 3px; text-align: center; width: 35px; position: sticky; left: 110px; background: #4472C4; z-index: 10;" rowspan="2">Dag</th>';
+            html += '<th style="border: 1px solid #4472C4; padding: 6px; text-align: center; width: 100px; min-width: 100px; position: sticky; left: 0; background: #4472C4; z-index: 10;">Naam Werknemer</th>';
 
             allDays.forEach(day => {
                 // Hide days beyond month length with opacity
                 const isInMonth = day <= daysInMonth;
-                const style = isInMonth 
-                    ? 'border: 1px solid #4472C4; padding: 2px; text-align: center; width: 32px;'
-                    : 'border: 1px solid #4472C4; padding: 2px; text-align: center; width: 32px; opacity: 0.3; background: #f0f0f0;';
-                html += `<th style="${style}">${day}</th>`;
-            });
-
-            html += '<th style="border: 1px solid #70AD47; padding: 3px; text-align: center; width: 60px; background: #70AD47; color: white;" rowspan="2">Totaal</th>';
-            html += '</tr>';
-
-            // Header row 2: Day names (ma, di, wo, etc.)
-            html += '<tr style="background: #4472C4; color: white; font-weight: bold;">';
-            allDays.forEach(day => {
-                const isInMonth = day <= daysInMonth;
                 const dayName = getDayName(day);
                 const style = isInMonth 
-                    ? 'border: 1px solid #4472C4; padding: 2px; text-align: center; width: 32px; font-size: 8px;'
-                    : 'border: 1px solid #4472C4; padding: 2px; text-align: center; width: 32px; opacity: 0.3; background: #f0f0f0; font-size: 8px;';
-                html += `<th style="${style}">${dayName}</th>`;
+                    ? 'border: 1px solid #4472C4; padding: 4px 2px; text-align: center; width: 38px; min-width: 38px; max-width: 38px; background: #4472C4; color: white;'
+                    : 'border: 1px solid #4472C4; padding: 4px 2px; text-align: center; width: 38px; min-width: 38px; max-width: 38px; opacity: 0.4; background: #f0f0f0; color: #666;';
+                html += `<th style="${style}">
+                    <div style="font-size: 13px; font-weight: bold; line-height: 1.3; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${day}</div>
+                    <div style="font-size: 10px; margin-top: 3px; line-height: 1.2; color: white; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${dayName}</div>
+                </th>`;
             });
+
+            html += '<th style="border: 1px solid #70AD47; padding: 6px; text-align: center; width: 70px; background: #70AD47; color: white;">Totaal</th>';
             html += '</tr></thead><tbody>';
 
             
@@ -2163,9 +2176,7 @@
 
                 html += `<tr>`;
 
-                html += `<td style="border: 1px solid #ddd; padding: 3px; font-weight: bold; position: sticky; left: 0; background: white; z-index: 5; font-size: 9px;"><strong>${w.naam}</strong></td>`;
-
-                html += `<td style="border: 1px solid #ddd; padding: 3px; text-align: center; position: sticky; left: 110px; background: white; z-index: 5; font-size: 8px; color: #666;">Dag</td>`;
+                html += `<td style="border: 1px solid #ddd; padding: 6px; font-weight: bold; position: sticky; left: 0; background: white; z-index: 5; font-size: 10px; width: 100px; min-width: 100px;"><strong>${w.naam}</strong></td>`;
 
                 
 
@@ -2195,7 +2206,7 @@
 
                     let cellContent = '';
 
-                    let cellStyle = 'border: 1px solid #ddd; padding: 1px; text-align: center; font-size: 9px;';
+                    let cellStyle = 'border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 10px; width: 38px; min-width: 38px; max-width: 38px; height: 32px;';
 
                     
 
@@ -2209,27 +2220,39 @@
 
                     } else if (afwezigheidValue) {
 
-                        // Show afwezigheid code
+                        // Show afwezigheid code with better colors
 
                         let bgColor = '#fff';
 
-                        if (afwezigheidValue === 'V') bgColor = '#FFC000'; // Vakantie - geel
+                        let textColor = '#000';
 
-                        else if (afwezigheidValue === 'A') bgColor = '#E7E6E6'; // Aangepast - grijs
+                        if (afwezigheidValue === 'V') {
 
-                        else if (afwezigheidValue === 'S') bgColor = '#D9E1F2'; // School - lichtblauw
+                            bgColor = '#FFE699'; // Vakantie - helder geel
+
+                            textColor = '#B8860B';
+
+                        } else if (afwezigheidValue === 'A') {
+
+                            bgColor = '#D0CECE'; // Ander werk - donkerder grijs
+
+                            textColor = '#5A5A5A';
+
+                        } else if (afwezigheidValue === 'S') {
+
+                            bgColor = '#B4C6E7'; // School - donkerder blauw
+
+                            textColor = '#1F4E78';
+
+                        }
 
                         
 
-                        cellContent = `<div style="position: relative;">
-
-                            <span style="position: absolute; top: 0px; left: 1px; font-size: 7px; color: #999;">${day}</span>
-
-                            <input type="text" value="${afwezigheidValue}" maxlength="1" 
+                        cellContent = `<input type="text" value="${afwezigheidValue}" maxlength="1" 
 
                                 data-werknemer-id="${w.id}" data-day="${day}"
 
-                                style="width: 100%; border: none; text-align: center; font-weight: bold; background: ${bgColor}; padding-top: 8px; font-size: 9px; height: 20px;" 
+                                style="width: 100%; height: 100%; border: none; text-align: center; font-weight: bold; background: ${bgColor}; color: ${textColor}; font-size: 12px; padding: 0;" 
 
                                 onchange="updateUrenBulkCell('${w.id}', ${day}, 'afwezigheid', this.value.toUpperCase()); updateCellColor(this); updateTotals();" 
 
@@ -2237,9 +2260,7 @@
 
                                 onmousedown="startDragFill(event, '${w.id}', ${day})"
 
-                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">
-
-                        </div>`;
+                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">`;
 
                         cellStyle += `background: ${bgColor};`;
 
@@ -2247,37 +2268,27 @@
 
                         // Show uren
 
-                        cellContent = `<div style="position: relative;">
-
-                            <span style="position: absolute; top: 0px; left: 1px; font-size: 7px; color: #999;">${day}</span>
-
-                            <input type="number" value="${urenValue}" step="0.5" min="0" 
+                        cellContent = `<input type="number" value="${urenValue}" step="0.5" min="0" 
 
                                 data-werknemer-id="${w.id}" data-day="${day}"
 
-                                style="width: 100%; border: none; text-align: center; padding-top: 8px; font-size: 9px; height: 20px;" 
+                                style="width: 100%; height: 100%; border: none; text-align: center; font-size: 11px; padding: 0;" 
 
                                 onchange="updateUrenBulkCell('${w.id}', ${day}, 'uren', parseFloat(this.value) || ''); updateTotals();"
 
                                 onmousedown="startDragFill(event, '${w.id}', ${day})"
 
-                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">
-
-                        </div>`;
+                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">`;
 
                     } else {
 
-                        // Empty cell - can enter either uren or afwezigheid (NO PLACEHOLDER)
+                        // Empty cell - can enter either uren or afwezigheid
 
-                        cellContent = `<div style="position: relative;">
-
-                            <span style="position: absolute; top: 1px; left: 2px; font-size: 8px; color: #999;">${day}</span>
-
-                            <input type="text" value="" 
+                        cellContent = `<input type="text" value="" 
 
                                 data-werknemer-id="${w.id}" data-day="${day}"
 
-                                style="width: 100%; border: none; text-align: center; padding-top: 8px; font-size: 9px; height: 20px;" 
+                                style="width: 100%; height: 100%; border: none; text-align: center; font-size: 11px; padding: 0;" 
 
                                 onchange="handleUrenBulkInput('${w.id}', ${day}, this.value); updateTotals();"
 
@@ -2285,9 +2296,7 @@
 
                                 onmousedown="startDragFill(event, '${w.id}', ${day})"
 
-                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">
-
-                        </div>`;
+                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">`;
 
                     }
 
@@ -2299,17 +2308,18 @@
 
                 
 
-                html += `<td style="border: 1px solid #ddd; padding: 3px; text-align: center; font-weight: bold; background: #E2EFDA; font-size: 9px;"><strong>${totaal.toFixed(1)}</strong></td></tr>`;
+                html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; font-weight: bold; background: #E2EFDA; font-size: 10px;"><strong>${totaal.toFixed(1)}</strong></td></tr>`;
 
             });
 
             
 
-            // Totaal row per dag
+            // Grand total row (shows totals per day and grand total)
 
-            html += '<tr style="background: #D9E1F2; font-weight: bold;"><td style="border: 1px solid #ddd; padding: 3px; position: sticky; left: 0; background: #D9E1F2; z-index: 5; font-size: 9px;">TOTAAL</td>';
+            html += '<tr style="background: #C5E0B4; font-weight: bold;">';
+            html += '<td style="border: 1px solid #ddd; padding: 6px; position: sticky; left: 0; background: #C5E0B4; z-index: 5; font-size: 10px;">TOTAAL</td>';
 
-            html += '<td style="border: 1px solid #ddd; padding: 3px; position: sticky; left: 110px; background: #D9E1F2; z-index: 5;"></td>';
+            let grandTotal = 0;
 
             allDays.forEach(day => {
 
@@ -2325,7 +2335,13 @@
 
                         const val = data ? data.uren : '';
 
-                        if (typeof val === 'number' && val > 0) dagTotaal += val;
+                        if (typeof val === 'number' && val > 0) {
+
+                            dagTotaal += val;
+
+                            grandTotal += val;
+
+                        }
 
                     });
 
@@ -2333,42 +2349,15 @@
 
                 const style = isInMonth 
 
-                    ? 'border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 9px;'
+                    ? 'border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 10px; width: 38px; min-width: 38px; max-width: 38px; height: 32px; background: #C5E0B4;'
 
-                    : 'border: 1px solid #ddd; padding: 2px; text-align: center; opacity: 0.3; background: #f0f0f0; font-size: 9px;';
+                    : 'border: 1px solid #ddd; padding: 4px; text-align: center; opacity: 0.3; background: #f0f0f0; font-size: 10px; width: 38px; min-width: 38px; max-width: 38px; height: 32px;';
 
                 html += `<td style="${style}">${isInMonth ? dagTotaal.toFixed(1) : ''}</td>`;
 
             });
 
-            
-
-            // Grand total row
-
-            html += '<tr style="background: #C5E0B4; font-weight: bold;">';
-            html += '<td style="border: 1px solid #ddd; padding: 3px; position: sticky; left: 0; background: #C5E0B4; z-index: 5; font-size: 9px;">TOTAAL TOTAAL</td>';
-            html += '<td style="border: 1px solid #ddd; padding: 3px; position: sticky; left: 110px; background: #C5E0B4; z-index: 5;"></td>';
-
-            let grandTotal = 0;
-
-            actieveWerknemers.forEach(w => {
-
-                days.forEach(day => {
-
-                    const data = urenBulkData[w.id][day];
-
-                    const val = data.uren;
-
-                    if (typeof val === 'number' && val > 0) grandTotal += val;
-
-                });
-
-            });
-
-            // Add empty cells for all days
-            allDays.forEach(() => html += '<td style="border: 1px solid #ddd; padding: 2px;"></td>');
-
-            html += `<td style="border: 1px solid #ddd; padding: 3px; text-align: center; background: #C5E0B4; font-size: 9px; font-weight: bold;">${grandTotal.toFixed(1)}</td></tr>`;
+            html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #C5E0B4; font-size: 10px; font-weight: bold;">${grandTotal.toFixed(1)}</td></tr>`;
 
             
 
@@ -2382,11 +2371,11 @@
 
             html += '<strong>Legende:</strong> ';
 
-            html += '<span style="background: #E7E6E6; padding: 2px 6px; margin: 0 5px;">A = Aangepast</span>';
+            html += '<span style="background: #D0CECE; color: #5A5A5A; padding: 4px 8px; margin: 0 5px; border-radius: 3px; font-weight: bold;">A = Ander Werk</span>';
 
-            html += '<span style="background: #FFC000; padding: 2px 6px; margin: 0 5px;">V = Vakantie</span>';
+            html += '<span style="background: #FFE699; color: #B8860B; padding: 4px 8px; margin: 0 5px; border-radius: 3px; font-weight: bold;">V = Vakantie</span>';
 
-            html += '<span style="background: #D9E1F2; padding: 2px 6px; margin: 0 5px;">S = School</span>';
+            html += '<span style="background: #B4C6E7; color: #1F4E78; padding: 4px 8px; margin: 0 5px; border-radius: 3px; font-weight: bold;">S = School</span>';
 
             html += '<span style="margin-left: 10px;">Of voer gewoon uren in (bijv. 8, 7.5, etc.)</span>';
 
@@ -2556,11 +2545,11 @@
 
                     let bgColor = '#fff';
 
-                    if (value === 'V') bgColor = '#FFC000';
+                    if (value === 'V') bgColor = '#FFE699';
 
-                    else if (value === 'A') bgColor = '#E7E6E6';
+                    else if (value === 'A') bgColor = '#D0CECE';
 
-                    else if (value === 'S') bgColor = '#D9E1F2';
+                    else if (value === 'S') bgColor = '#B4C6E7';
 
                     cell.style.background = bgColor;
 
@@ -2604,27 +2593,27 @@
 
             if (value === 'V') {
 
-                input.style.background = '#FFC000'; // Vakantie - geel
+                input.style.background = '#FFE699'; // Vakantie - helder geel
 
                 input.style.fontWeight = 'bold';
 
-                input.style.color = '#000';
+                input.style.color = '#B8860B';
 
             } else if (value === 'A') {
 
-                input.style.background = '#E7E6E6'; // Aangepast - grijs
+                input.style.background = '#D0CECE'; // Ander werk - donkerder grijs
 
                 input.style.fontWeight = 'bold';
 
-                input.style.color = '#000';
+                input.style.color = '#5A5A5A';
 
             } else if (value === 'S') {
 
-                input.style.background = '#D9E1F2'; // School - lichtblauw
+                input.style.background = '#B4C6E7'; // School - donkerder blauw
 
                 input.style.fontWeight = 'bold';
 
-                input.style.color = '#000';
+                input.style.color = '#1F4E78';
 
             } else {
 
@@ -2668,6 +2657,48 @@
 
         // Update cell data
 
+        // Auto-save timers per pagina type
+        let autoSaveTimers = {
+            uren: null,
+            kilometers: null,
+            dagontvangsten: null,
+            gratisCola: null
+        };
+
+        // Auto-save functie (stil, zonder alerts)
+        async function autoSave(pageType) {
+            try {
+                switch(pageType) {
+                    case 'uren':
+                        await saveUrenBulk(true); // true = silent mode
+                        break;
+                    case 'kilometers':
+                        await saveKmBulk(true);
+                        break;
+                    case 'dagontvangsten':
+                        await saveDagontvangstenBulk(true);
+                        break;
+                    case 'gratisCola':
+                        await saveGratisColaBulk(true);
+                        break;
+                }
+            } catch (error) {
+                console.error('Auto-save error:', error);
+            }
+        }
+
+        // Trigger auto-save met debounce
+        function triggerAutoSave(pageType) {
+            // Clear existing timer
+            if (autoSaveTimers[pageType]) {
+                clearTimeout(autoSaveTimers[pageType]);
+            }
+            // Set new timer (2 seconden delay)
+            autoSaveTimers[pageType] = setTimeout(() => {
+                autoSave(pageType);
+            }, 2000);
+        }
+
         function updateUrenBulkCell(werknemerId, day, type, value) {
 
             if (!urenBulkData[werknemerId]) urenBulkData[werknemerId] = {};
@@ -2677,6 +2708,9 @@
             
 
             urenBulkData[werknemerId][day][type] = value;
+
+            // Trigger auto-save
+            triggerAutoSave('uren');
 
             
 
@@ -3196,10 +3230,125 @@
 
 
 
-            alert(`${saved} items opgeslagen${deleted > 0 ? `, ${deleted} verwijderd` : ''}!`);
+            if (!silent) {
+                alert(`${saved} items opgeslagen${deleted > 0 ? `, ${deleted} verwijderd` : ''}!`);
+            }
 
             loadUrenBulk();
 
+        }
+
+        // PDF Export voor Uren Bulk
+        async function exportUrenBulkToPDF() {
+            const maand = document.getElementById('uren-bulk-maand').value;
+            if (!maand) {
+                alert('Selecteer eerst een maand');
+                return;
+            }
+
+            // Check if jsPDF is available
+            if (typeof window.jspdf === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                script.onload = () => {
+                    loadAutoTableAndExportUren(maand);
+                };
+                document.head.appendChild(script);
+            } else {
+                loadAutoTableAndExportUren(maand);
+            }
+        }
+
+        async function loadAutoTableAndExportUren(maand) {
+            if (typeof window.jspdf !== 'undefined' && !window.jspdf.API.autoTable) {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+                script.onload = () => {
+                    generateUrenBulkPDF(maand);
+                };
+                document.head.appendChild(script);
+            } else {
+                generateUrenBulkPDF(maand);
+            }
+        }
+
+        async function generateUrenBulkPDF(maand) {
+            const { jsPDF } = window.jspdf || window;
+            const [year, month] = maand.split('-');
+            const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+                              'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+            const monthName = monthNames[parseInt(month) - 1];
+            const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
+            const werknemers = await window.db.get('werknemers');
+            const actieveWerknemers = werknemers.filter(w => w.actief !== false);
+
+            const doc = new jsPDF('landscape', 'mm', 'a4');
+            doc.setFontSize(18);
+            doc.text('Uren Maandoverzicht', 14, 15);
+            doc.setFontSize(12);
+            doc.text(`${monthName} ${year}`, 14, 22);
+
+            // Prepare table data
+            const tableData = [];
+            const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+            
+            for (const werknemer of actieveWerknemers) {
+                const row = [werknemer.naam];
+                let totaal = 0;
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const data = urenBulkData[werknemer.id]?.[day];
+                    let cellValue = '';
+                    
+                    if (data) {
+                        if (data.afwezigheid) {
+                            cellValue = data.afwezigheid;
+                        } else if (typeof data.uren === 'number' && data.uren > 0) {
+                            cellValue = data.uren.toFixed(1);
+                            totaal += data.uren;
+                        }
+                    }
+                    row.push(cellValue);
+                }
+                row.push(totaal.toFixed(1));
+                tableData.push(row);
+            }
+
+            // Total row
+            const totalRow = ['TOTAAL'];
+            let grandTotal = 0;
+            for (let day = 1; day <= daysInMonth; day++) {
+                let dagTotaal = 0;
+                actieveWerknemers.forEach(w => {
+                    const data = urenBulkData[w.id]?.[day];
+                    if (data && typeof data.uren === 'number' && data.uren > 0) {
+                        dagTotaal += data.uren;
+                    }
+                });
+                totalRow.push(dagTotaal > 0 ? dagTotaal.toFixed(1) : '');
+                grandTotal += dagTotaal;
+            }
+            totalRow.push(grandTotal.toFixed(1));
+            tableData.push(totalRow);
+
+            // Create headers
+            const headers = ['Werknemer', ...days.map(d => d.toString()), 'Totaal'];
+
+            doc.autoTable({
+                head: [headers],
+                body: tableData,
+                startY: 28,
+                styles: { fontSize: 7 },
+                headStyles: { fillColor: [68, 114, 196], textColor: 255, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [245, 245, 245] },
+                columnStyles: {
+                    0: { cellWidth: 40, halign: 'left' },
+                    [headers.length - 1]: { cellWidth: 25, halign: 'right', fontStyle: 'bold' }
+                }
+            });
+
+            doc.save(`Uren_${monthName}_${year}.pdf`);
         }
 
 
@@ -3270,11 +3419,40 @@
 
 
 
-            let html = '<table style="font-size: 9px; border-collapse: collapse; width: 100%; table-layout: fixed;" class="km-bulk-table"><thead><tr>';
-            html += '<th style="border: 1px solid #4472C4; padding: 3px; text-align: center; width: 110px; position: sticky; left: 0; background: #4472C4; color: white; font-weight: bold;">Werknemer</th>';
-            days.forEach(day => html += `<th style="border: 1px solid #4472C4; padding: 2px; text-align: center; width: 32px; background: #4472C4; color: white; font-weight: bold;">${day}</th>`);
-            html += '<th style="border: 1px solid #70AD47; padding: 3px; text-align: center; width: 60px; background: #70AD47; color: white; font-weight: bold;">Totaal KM</th>';
-            html += '<th style="border: 1px solid #70AD47; padding: 3px; text-align: center; width: 70px; background: #70AD47; color: white; font-weight: bold;">Kosten (&euro;0.40/km)</th></tr></thead><tbody>';
+            // Helper function to get day name
+            const getDayName = (day) => {
+                if (day > daysInMonth) return '';
+                const date = new Date(parseInt(year), parseInt(month) - 1, day);
+                const dayNames = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
+                return dayNames[date.getDay()];
+            };
+
+            // Create array with all days 1-31
+            const allDays = Array.from({ length: 31 }, (_, i) => i + 1);
+
+            let html = '<div style="margin-top: 20px;">';
+            html += '<table style="font-size: 10px; border-collapse: collapse; width: 100%; table-layout: fixed; max-width: 100%;" class="km-bulk-table">';
+
+            // Header row: Combined day number and day name in one cell
+            html += '<thead><tr style="background: #4472C4; color: white; font-weight: bold;">';
+            html += '<th style="border: 1px solid #4472C4; padding: 4px; text-align: center; width: 85px; min-width: 85px; position: sticky; left: 0; background: #4472C4; z-index: 10; font-size: 9px;">Naam Werknemer</th>';
+
+            allDays.forEach(day => {
+                // Hide days beyond month length with opacity
+                const isInMonth = day <= daysInMonth;
+                const dayName = getDayName(day);
+                const style = isInMonth 
+                    ? 'border: 1px solid #4472C4; padding: 2px 1px; text-align: center; width: 30px; min-width: 30px; max-width: 30px; background: #4472C4; color: white;'
+                    : 'border: 1px solid #4472C4; padding: 2px 1px; text-align: center; width: 30px; min-width: 30px; max-width: 30px; opacity: 0.4; background: #f0f0f0; color: #666;';
+                html += `<th style="${style}">
+                    <div style="font-size: 11px; font-weight: bold; line-height: 1.2; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${day}</div>
+                    <div style="font-size: 8px; margin-top: 1px; line-height: 1.1; color: white; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${dayName}</div>
+                </th>`;
+            });
+
+            html += '<th style="border: 1px solid #70AD47; padding: 4px; text-align: center; width: 70px; background: #70AD47; color: white; position: sticky; right: 75px; z-index: 8; font-size: 9px;">Totaal KM</th>';
+            html += '<th style="border: 1px solid #70AD47; padding: 4px; text-align: center; width: 75px; background: #70AD47; color: white; position: sticky; right: 0; z-index: 8; font-size: 9px;">Totaal Kosten<br/>(€0,40/km)</th>';
+            html += '</tr></thead><tbody>';
 
             
 
@@ -3286,15 +3464,32 @@
 
                 let totaal = 0;
 
-                html += `<tr data-werknemer-id="${w.id}"><td style="border: 1px solid #ddd; padding: 3px; font-weight: bold; position: sticky; left: 0; background: white; z-index: 5; font-size: 9px;"><strong>${w.naam}</strong></td>`;
+                html += `<tr data-werknemer-id="${w.id}">`;
+                html += `<td style="border: 1px solid #ddd; padding: 4px; font-weight: bold; position: sticky; left: 0; background: white; z-index: 5; font-size: 9px; width: 85px; min-width: 85px;"><strong>${w.naam}</strong></td>`;
 
-                days.forEach(day => {
+                allDays.forEach(day => {
 
-                    const value = kmBulkData[w.id][day] || '';
+                    const isInMonth = day <= daysInMonth;
 
-                    totaal += typeof value === 'number' ? value : 0;
+                    const value = isInMonth ? (kmBulkData[w.id][day] || '') : '';
 
-                    html += `<td style="border: 1px solid #ddd; padding: 1px;"><input type="number" value="${value}" data-werknemer-id="${w.id}" data-day="${day}" style="width: 100%; border: none; padding: 2px; text-align: center; font-size: 9px; height: 20px;" onchange="updateKmBulkCell('${w.id}', ${day}, this); updateKmBulkAllTotals();"></td>`;
+                    if (isInMonth && typeof value === 'number') {
+                        totaal += value;
+                    }
+
+                    let cellStyle = 'border: 1px solid #ddd; padding: 1px; text-align: center; font-size: 9px; width: 30px; min-width: 30px; max-width: 30px; height: 28px;';
+
+                    if (!isInMonth) {
+                        cellStyle += 'opacity: 0.3; background: #f0f0f0;';
+                        html += `<td style="${cellStyle}"></td>`;
+                    } else {
+                        html += `<td style="${cellStyle}">
+                            <input type="number" value="${value}" step="0.1" min="0" 
+                                data-werknemer-id="${w.id}" data-day="${day}" 
+                                style="width: 100%; height: 100%; border: none; text-align: center; font-size: 9px; padding: 0;" 
+                                onchange="updateKmBulkCell('${w.id}', ${day}, this); updateKmBulkAllTotals();">
+                        </td>`;
+                    }
 
                 });
 
@@ -3302,27 +3497,66 @@
 
                 grandTotalCost += (totaal * 0.40);
 
-                html += `<td class="row-total-km" style="border: 1px solid #ddd; padding: 3px; text-align: center; font-weight: bold; background: #E2EFDA; font-size: 9px;"><strong>${totaal.toFixed(1)}</strong></td>`;
+                const kostenPerWerknemer = totaal * 0.40;
 
-                html += `<td class="row-total-cost" style="border: 1px solid #ddd; padding: 3px; text-align: center; font-weight: bold; background: #E2EFDA; font-size: 9px;"><strong>&euro;${(totaal * 0.40).toFixed(2)}</strong></td></tr>`;
+                html += `<td class="row-total-km" style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; background: #E2EFDA; font-size: 9px; position: sticky; right: 75px; z-index: 3;"><strong>${totaal.toFixed(1)}</strong></td>`;
+
+                html += `<td class="row-total-cost-final" style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; background: #E2EFDA; font-size: 9px; position: sticky; right: 0; z-index: 3;"><strong>&euro;${kostenPerWerknemer.toFixed(2)}</strong></td></tr>`;
 
             });
 
             
 
-            // Totaalrij
+            // Totaalrij (shows totals per day and grand total)
 
-            html += '<tr style="background-color: #D9E1F2; font-weight: bold;"><td style="border: 1px solid #ddd; padding: 3px; position: sticky; left: 0; background: #D9E1F2; z-index: 5; font-size: 9px;"><strong>TOTAAL</strong></td>';
+            html += '<tr style="background: #C5E0B4; font-weight: bold;">';
+            html += '<td style="border: 1px solid #ddd; padding: 4px; position: sticky; left: 0; background: #C5E0B4; z-index: 5; font-size: 9px;">TOTAAL</td>';
 
-            days.forEach(() => html += '<td style="border: 1px solid #ddd; padding: 2px;"></td>');
+            let recalcGrandTotalKm = 0;
 
-            html += `<td class="grand-total-km" style="border: 1px solid #ddd; padding: 3px; text-align: center; font-size: 9px;"><strong>${grandTotalKm.toFixed(1)}</strong></td>`;
+            allDays.forEach(day => {
 
-            html += `<td class="grand-total-cost" style="border: 1px solid #ddd; padding: 3px; text-align: center; font-size: 9px;"><strong>&euro;${grandTotalCost.toFixed(2)}</strong></td></tr>`;
+                const isInMonth = day <= daysInMonth;
+
+                let dagTotaal = 0;
+
+                if (isInMonth) {
+
+                    actieveWerknemers.forEach(w => {
+
+                        const value = kmBulkData[w.id][day];
+
+                        if (typeof value === 'number' && value > 0) {
+
+                            dagTotaal += value;
+
+                            recalcGrandTotalKm += value;
+
+                        }
+
+                    });
+
+                }
+
+                const style = isInMonth 
+
+                    ? 'border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 9px; width: 30px; min-width: 30px; max-width: 30px; height: 28px; background: #C5E0B4;'
+
+                    : 'border: 1px solid #ddd; padding: 2px; text-align: center; opacity: 0.3; background: #f0f0f0; font-size: 9px; width: 30px; min-width: 30px; max-width: 30px; height: 28px;';
+
+                html += `<td class="day-total-km" data-day="${day}" style="${style}">${isInMonth ? dagTotaal.toFixed(1) : ''}</td>`;
+
+            });
+
+            const recalcGrandTotalCost = recalcGrandTotalKm * 0.40;
+
+            html += `<td class="grand-total-km" style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; font-size: 9px; font-weight: bold; position: sticky; right: 75px; z-index: 3;">${recalcGrandTotalKm.toFixed(1)}</td>`;
+
+            html += `<td class="grand-total-cost-final" style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; font-size: 9px; font-weight: bold; position: sticky; right: 0; z-index: 3;">&euro;${recalcGrandTotalCost.toFixed(2)}</td></tr>`;
 
             
 
-            html += '</tbody></table>';
+            html += '</tbody></table></div>';
 
             document.getElementById('kilometers-bulk-list').innerHTML = html;
 
@@ -3336,21 +3570,31 @@
 
             if (!row || !werknemerId) return;
 
+            const maand = document.getElementById('km-bulk-maand').value;
+            if (!maand) return;
+
+            const [year, month] = maand.split('-');
+            const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
             const inputs = row.querySelectorAll('input[type="number"][data-werknemer-id]');
 
             let totaal = 0;
 
             inputs.forEach(input => {
 
-                const value = parseFloat(input.value) || 0;
+                const day = parseInt(input.getAttribute('data-day'));
 
-                totaal += value;
+                if (day <= daysInMonth) {
+
+                    const value = parseFloat(input.value) || 0;
+
+                    totaal += value;
+
+                }
 
             });
 
-            const totalCell = row.querySelector('td:nth-last-child(2)');
-
-            const costCell = row.querySelector('td:last-child');
+            const totalCell = row.querySelector('.row-total-km');
 
             if (totalCell) {
 
@@ -3358,11 +3602,17 @@
 
             }
 
-            if (costCell) {
+            // Update total cost column
+            const costFinalCell = row.querySelector('.row-total-cost-final');
 
-                costCell.innerHTML = `<strong>&euro;${(totaal * 0.40).toFixed(2)}</strong>`;
+            if (costFinalCell) {
+
+                costFinalCell.innerHTML = `<strong>&euro;${(totaal * 0.40).toFixed(2)}</strong>`;
 
             }
+
+            // Also update all totals to refresh day totals
+            updateKmBulkAllTotals();
 
         }
 
@@ -3378,11 +3628,14 @@
 
             kmBulkData[werknemerId][day] = value;
 
+            // Trigger auto-save
+            triggerAutoSave('kilometers');
+
         }
 
 
 
-        // Update all totals (row totals and grand total)
+        // Update all totals (row totals, day totals, and grand total)
 
         function updateKmBulkAllTotals() {
 
@@ -3396,6 +3649,13 @@
 
             let grandTotalCost = 0;
 
+            // Get all day numbers from inputs
+            const allDays = Array.from({ length: 31 }, (_, i) => i + 1);
+            const maand = document.getElementById('km-bulk-maand').value;
+            const [year, month] = maand.split('-');
+            const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
+            // Update row totals
             rows.forEach(row => {
 
                 const werknemerId = row.getAttribute('data-werknemer-id');
@@ -3406,15 +3666,19 @@
 
                 inputs.forEach(input => {
 
-                    const value = parseFloat(input.value) || 0;
+                    const day = parseInt(input.getAttribute('data-day'));
 
-                    totaal += value;
+                    if (day <= daysInMonth) {
+
+                        const value = parseFloat(input.value) || 0;
+
+                        totaal += value;
+
+                    }
 
                 });
 
                 const totalKmCell = row.querySelector('.row-total-km');
-
-                const totalCostCell = row.querySelector('.row-total-cost');
 
                 if (totalKmCell) {
 
@@ -3422,9 +3686,12 @@
 
                 }
 
-                if (totalCostCell) {
+                // Update total cost column
+                const totalCostFinalCell = row.querySelector('.row-total-cost-final');
 
-                    totalCostCell.innerHTML = `<strong>&euro;${(totaal * 0.40).toFixed(2)}</strong>`;
+                if (totalCostFinalCell) {
+
+                    totalCostFinalCell.innerHTML = `<strong>&euro;${(totaal * 0.40).toFixed(2)}</strong>`;
 
                 }
 
@@ -3434,11 +3701,44 @@
 
             });
 
+            // Update day totals in TOTAAL row (kilometers only, costs calculated from grand total)
+            allDays.forEach(day => {
+
+                const isInMonth = day <= daysInMonth;
+
+                if (isInMonth) {
+
+                    let dagTotaal = 0;
+
+                    rows.forEach(row => {
+
+                        const input = row.querySelector(`input[data-day="${day}"]`);
+
+                        if (input) {
+
+                            const value = parseFloat(input.value) || 0;
+
+                            dagTotaal += value;
+
+                        }
+
+                    });
+
+                    const dayTotalCell = table.querySelector(`.day-total-km[data-day="${day}"]`);
+
+                    if (dayTotalCell) {
+
+                        dayTotalCell.textContent = dagTotaal.toFixed(1);
+
+                    }
+
+                }
+
+            });
+
             // Update grand total row
 
             const grandTotalKmCell = table.querySelector('.grand-total-km');
-
-            const grandTotalCostCell = table.querySelector('.grand-total-cost');
 
             if (grandTotalKmCell) {
 
@@ -3446,9 +3746,12 @@
 
             }
 
-            if (grandTotalCostCell) {
+            // Update grand total cost column
+            const grandTotalCostFinalCell = table.querySelector('.grand-total-cost-final');
 
-                grandTotalCostCell.innerHTML = `<strong>&euro;${grandTotalCost.toFixed(2)}</strong>`;
+            if (grandTotalCostFinalCell) {
+
+                grandTotalCostFinalCell.innerHTML = `<strong>&euro;${grandTotalCost.toFixed(2)}</strong>`;
 
             }
 
@@ -3456,13 +3759,13 @@
 
 
 
-        async function saveKmBulk() {
+        async function saveKmBulk(silent = false) {
 
             const maand = document.getElementById('km-bulk-maand').value;
 
             if (!maand) {
 
-                alert('Selecteer eerst een maand');
+                if (!silent) alert('Selecteer eerst een maand');
 
                 return;
 
@@ -3530,7 +3833,9 @@
 
 
 
-            alert(`${saved} kilometers opgeslagen!`);
+            if (!silent) {
+                alert(`${saved} kilometers opgeslagen!`);
+            }
 
             loadKmBulk();
 
@@ -3967,7 +4272,9 @@
 
                         
 
-                        if (result.imported.werknemers === 0 && result.imported.kilometers === 0 && result.imported.uren === 0) {
+                        const totalImported = (result.imported.werknemers || 0) + (result.imported.kilometers || 0) + (result.imported.uren || 0) + (result.imported.records || 0);
+                        
+                        if (totalImported === 0) {
                             const debugInfo = result.debug ? `
                                 <br><strong>Debug Informatie:</strong><br>
                                 Totaal rijen in Excel: ${result.debug.totalRows || 0}<br>
@@ -3976,7 +4283,7 @@
                             ` : '';
                             
                             resultDiv.innerHTML = `<div class="alert" style="background: #fff3cd; color: #856404; border: 1px solid #ffeaa7;">
-                                <strong>Import voltooid, maar 0 items geïmporteerd!</strong><br>
+                                <strong>⚠️ Import voltooid, maar 0 items geïmporteerd!</strong><br>
                                 <br>
                                 <strong>Mogelijke oorzaken:</strong><br>
                                 1. Kolomnamen komen niet overeen (check hieronder voor beschikbare kolommen)<br>
@@ -3987,18 +4294,20 @@
                                 <br>
                                 <strong>Debug:</strong> Open DevTools (F12) en check de Console tab voor meer details.<br>
                                 <br>
-                                Werknemers: ${result.imported.werknemers || 0}<br>
-                                ${importType === 'kilometers' ? `Kilometers: ${result.imported.kilometers || 0}` : 
+                                ${importType === 'dagontvangsten' ? `Records: ${result.imported.records || 0}` :
+                                  importType === 'gratis-cola' ? `Records: ${result.imported.records || 0}` :
+                                  importType === 'kilometers' ? `Kilometers: ${result.imported.kilometers || 0}` : 
                                   importType === 'uren-afwezigheden' ? `Uren/Afwezigheden: ${result.imported.uren || 0}` : 
-                                  `Uren: ${result.imported.uren || 0}`}
+                                  `Werknemers: ${result.imported.werknemers || 0}, Uren: ${result.imported.uren || 0}`}
                             </div>`;
                         } else {
                             resultDiv.innerHTML = `<div class="alert alert-success">
-                                <strong>Import succesvol!</strong><br>
-                                Werknemers: ${result.imported.werknemers || 0}<br>
-                                ${importType === 'kilometers' ? `Kilometers: ${result.imported.kilometers || 0}` : 
+                                <strong>✅ Import succesvol!</strong><br>
+                                ${importType === 'dagontvangsten' ? `Records: ${result.imported.records || 0}` :
+                                  importType === 'gratis-cola' ? `Records: ${result.imported.records || 0}` :
+                                  importType === 'kilometers' ? `Kilometers: ${result.imported.kilometers || 0}` : 
                                   importType === 'uren-afwezigheden' ? `Uren/Afwezigheden: ${result.imported.uren || 0}` : 
-                                  `Uren: ${result.imported.uren || 0}`}
+                                  `Werknemers: ${result.imported.werknemers || 0}, Uren: ${result.imported.uren || 0}`}
                             </div>`;
                         }
 
@@ -4128,7 +4437,7 @@
 
             let html = '<div style="overflow-x: auto; margin-top: 20px;">';
 
-            html += '<table style="font-size: 11px; border-collapse: collapse; min-width: 100%;" class="dagontvangsten-bulk-table">';
+            html += '<table style="font-size: 9px; border-collapse: collapse; min-width: 100%;" class="dagontvangsten-bulk-table">';
 
             
 
@@ -4136,19 +4445,22 @@
 
             html += '<thead><tr style="background: #4472C4; color: white; font-weight: bold;">';
 
-            html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 80px; position: sticky; left: 0; background: #4472C4; z-index: 10;">Dag</th>';
+            html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; width: 90px; position: sticky; left: 0; background: #4472C4; z-index: 10; font-size: 9px; height: 35px; vertical-align: middle;">Datum</th>';
 
-            html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 120px; background: #70AD47;">6% BTW</th>';
+            html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; width: 60px; background: #70AD47; font-size: 9px; height: 35px; vertical-align: middle;">6% BTW</th>';
 
-            html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 120px; background: #70AD47;">12% BTW</th>';
+            html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; width: 60px; background: #70AD47; font-size: 9px; height: 35px; vertical-align: middle;">12% BTW</th>';
 
-            html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 120px; background: #70AD47;">21% BTW</th>';
+            html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; width: 60px; background: #70AD47; font-size: 9px; height: 35px; vertical-align: middle;">21% BTW</th>';
+
+            html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; width: 60px; background: #FFC000; font-size: 9px; height: 35px; vertical-align: middle;">Dagtotaal</th>';
 
             html += '</tr></thead><tbody>';
 
             
 
             // Data rows - one row per day (1-31)
+            const monthNamesShort = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
 
             for (let day = 1; day <= 31; day++) {
 
@@ -4156,25 +4468,32 @@
 
                 const data = dagontvangstenBulkData[day] || { btw6: '', btw12: '', btw21: '', opmerking: '' };
 
+                const date = new Date(parseInt(year), parseInt(month) - 1, day);
+                const isValidDate = isInMonth && date.getMonth() === parseInt(month) - 1;
+                const dateStr = isValidDate ? `${day} ${monthNamesShort[parseInt(month) - 1]} ${year}` : '';
+
+                // Zebra striping: even days = white, odd days = light gray
+                const rowBg = isInMonth ? (day % 2 === 0 ? '#ffffff' : '#f5f5f5') : '#f0f0f0';
+                const dateBg = isInMonth ? (day % 2 === 0 ? '#ffffff' : '#f5f5f5') : '#f0f0f0';
+
                 
 
                 html += `<tr>`;
 
-                html += `<td style="border: 1px solid #ddd; padding: 6px; font-weight: bold; text-align: center; background: ${isInMonth ? '#f8f9fa' : '#f0f0f0'}; position: sticky; left: 0; z-index: 5;">${day}</td>`;
-
-                
+                // Datum kolom - zelfde hoogte als header
+                html += `<td style="border: 1px solid #ddd; padding: 4px; font-weight: bold; text-align: left; background: ${dateBg}; position: sticky; left: 0; z-index: 5; font-size: 9px; width: 90px; height: 35px; vertical-align: middle;">${dateStr}</td>`;
 
                 if (isInMonth) {
 
-                    // 6% BTW cell
+                    // 6% BTW cell - zelfde hoogte als header
 
-                    html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center;">
+                    html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; width: 60px; height: 35px; background: ${rowBg}; vertical-align: middle;">
 
                         <input type="number" value="${data.btw6 !== '' ? data.btw6 : ''}" step="0.01" min="0" 
 
                             data-day="${day}" data-btw="6"
 
-                            style="width: 100%; border: none; text-align: center; padding: 4px;" 
+                            style="width: 100%; border: none; text-align: center; padding: 4px; font-size: 9px; height: 100%; box-sizing: border-box;" 
 
                             onchange="updateDagontvangstBtwCell(${day}, 6, parseFloat(this.value) || ''); updateDagontvangstenTotals();">
 
@@ -4182,15 +4501,15 @@
 
                     
 
-                    // 12% BTW cell
+                    // 12% BTW cell - zelfde hoogte als header
 
-                    html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center;">
+                    html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; width: 60px; height: 35px; background: ${rowBg}; vertical-align: middle;">
 
                         <input type="number" value="${data.btw12 !== '' ? data.btw12 : ''}" step="0.01" min="0" 
 
                             data-day="${day}" data-btw="12"
 
-                            style="width: 100%; border: none; text-align: center; padding: 4px;" 
+                            style="width: 100%; border: none; text-align: center; padding: 4px; font-size: 9px; height: 100%; box-sizing: border-box;" 
 
                             onchange="updateDagontvangstBtwCell(${day}, 12, parseFloat(this.value) || ''); updateDagontvangstenTotals();">
 
@@ -4198,29 +4517,37 @@
 
                     
 
-                    // 21% BTW cell
+                    // 21% BTW cell - zelfde hoogte als header
 
-                    html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center;">
+                    html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; width: 60px; height: 35px; background: ${rowBg}; vertical-align: middle;">
 
                         <input type="number" value="${data.btw21 !== '' ? data.btw21 : ''}" step="0.01" min="0" 
 
                             data-day="${day}" data-btw="21"
 
-                            style="width: 100%; border: none; text-align: center; padding: 4px;" 
+                            style="width: 100%; border: none; text-align: center; padding: 4px; font-size: 9px; height: 100%; box-sizing: border-box;" 
 
                             onchange="updateDagontvangstBtwCell(${day}, 21, parseFloat(this.value) || ''); updateDagontvangstenTotals();">
 
                     </td>`;
 
+                    // Dagtotaal kolom (som van 6%, 12%, 21%) - zelfde hoogte als header
+                    const dagTotaal = (typeof data.btw6 === 'number' ? data.btw6 : 0) + 
+                                     (typeof data.btw12 === 'number' ? data.btw12 : 0) + 
+                                     (typeof data.btw21 === 'number' ? data.btw21 : 0);
+                    html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: ${day % 2 === 0 ? '#FFF9E6' : '#FFE6CC'}; font-weight: bold; width: 60px; height: 35px; font-size: 9px; vertical-align: middle;" class="dag-totaal" data-day="${day}">${dagTotaal > 0 ? dagTotaal.toFixed(2) : ''}</td>`;
+
                 } else {
 
                     // Days outside month - disabled
 
-                    html += `<td style="border: 1px solid #ddd; padding: 6px; opacity: 0.3; background: #f0f0f0;"></td>`;
+                    html += `<td style="border: 1px solid #ddd; padding: 4px; opacity: 0.3; background: #f0f0f0; width: 60px; height: 35px; vertical-align: middle;"></td>`;
 
-                    html += `<td style="border: 1px solid #ddd; padding: 6px; opacity: 0.3; background: #f0f0f0;"></td>`;
+                    html += `<td style="border: 1px solid #ddd; padding: 4px; opacity: 0.3; background: #f0f0f0; width: 60px; height: 35px; vertical-align: middle;"></td>`;
 
-                    html += `<td style="border: 1px solid #ddd; padding: 6px; opacity: 0.3; background: #f0f0f0;"></td>`;
+                    html += `<td style="border: 1px solid #ddd; padding: 4px; opacity: 0.3; background: #f0f0f0; width: 60px; height: 35px; vertical-align: middle;"></td>`;
+
+                    html += `<td style="border: 1px solid #ddd; padding: 4px; opacity: 0.3; background: #f0f0f0; width: 60px; height: 35px; vertical-align: middle;"></td>`;
 
                 }
 
@@ -4236,9 +4563,7 @@
 
             html += '<tr style="background: #D9E1F2; font-weight: bold;">';
 
-            html += '<td style="border: 1px solid #ddd; padding: 8px; position: sticky; left: 0; background: #D9E1F2; z-index: 5;">TOTAAL</td>';
-
-            
+            html += '<td style="border: 1px solid #ddd; padding: 4px; position: sticky; left: 0; background: #D9E1F2; z-index: 5; font-size: 9px; width: 90px; height: 35px; vertical-align: middle;">TOTAAL</td>';
 
             // Calculate totals for each BTW percentage
 
@@ -4300,13 +4625,13 @@
 
             // 6% BTW totalen
 
-            html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #E2EFDA;">
+            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #E2EFDA; width: 60px; height: 35px; vertical-align: middle;">
 
-                <div style="font-size: 10px;">Incl: &euro;${totaal6Incl.toFixed(2)}</div>
+                <div style="font-size: 8px; line-height: 1.2;">Incl: &euro;${totaal6Incl.toFixed(2)}</div>
 
-                <div style="font-size: 10px;">Excl: &euro;${totaal6Excl.toFixed(2)}</div>
+                <div style="font-size: 8px; line-height: 1.2;">Excl: &euro;${totaal6Excl.toFixed(2)}</div>
 
-                <div style="font-size: 10px; color: #d32f2f;">BTW: &euro;${btw6.toFixed(2)}</div>
+                <div style="font-size: 8px; line-height: 1.2; color: #d32f2f;">BTW: &euro;${btw6.toFixed(2)}</div>
 
             </td>`;
 
@@ -4314,13 +4639,13 @@
 
             // 12% BTW totalen
 
-            html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #E2EFDA;">
+            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #E2EFDA; width: 60px; height: 35px; vertical-align: middle;">
 
-                <div style="font-size: 10px;">Incl: &euro;${totaal12Incl.toFixed(2)}</div>
+                <div style="font-size: 8px; line-height: 1.2;">Incl: &euro;${totaal12Incl.toFixed(2)}</div>
 
-                <div style="font-size: 10px;">Excl: &euro;${totaal12Excl.toFixed(2)}</div>
+                <div style="font-size: 8px; line-height: 1.2;">Excl: &euro;${totaal12Excl.toFixed(2)}</div>
 
-                <div style="font-size: 10px; color: #d32f2f;">BTW: &euro;${btw12.toFixed(2)}</div>
+                <div style="font-size: 8px; line-height: 1.2; color: #d32f2f;">BTW: &euro;${btw12.toFixed(2)}</div>
 
             </td>`;
 
@@ -4328,15 +4653,19 @@
 
             // 21% BTW totalen
 
-            html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #E2EFDA;">
+            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #E2EFDA; width: 60px; height: 35px; vertical-align: middle;">
 
-                <div style="font-size: 10px;">Incl: &euro;${totaal21Incl.toFixed(2)}</div>
+                <div style="font-size: 8px; line-height: 1.2;">Incl: &euro;${totaal21Incl.toFixed(2)}</div>
 
-                <div style="font-size: 10px;">Excl: &euro;${totaal21Excl.toFixed(2)}</div>
+                <div style="font-size: 8px; line-height: 1.2;">Excl: &euro;${totaal21Excl.toFixed(2)}</div>
 
-                <div style="font-size: 10px; color: #d32f2f;">BTW: &euro;${btw21.toFixed(2)}</div>
+                <div style="font-size: 8px; line-height: 1.2; color: #d32f2f;">BTW: &euro;${btw21.toFixed(2)}</div>
 
             </td>`;
+
+            // Dagtotaal kolom totaal (som van alle dagtotalen)
+            const totaalDagTotaal = totaal6Incl + totaal12Incl + totaal21Incl;
+            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #FFF2CC; font-weight: bold; width: 60px; height: 35px; font-size: 9px; vertical-align: middle;">&euro;${totaalDagTotaal.toFixed(2)}</td>`;
 
             
 
@@ -4356,15 +4685,15 @@
 
             html += '<tr style="background: #C5E0B4; font-weight: bold;">';
 
-            html += '<td style="border: 1px solid #ddd; padding: 8px; position: sticky; left: 0; background: #C5E0B4; z-index: 5;">TOTAAL BTW</td>';
+            html += `<td style="border: 1px solid #ddd; padding: 4px; position: sticky; left: 0; background: #C5E0B4; z-index: 5; font-size: 9px; width: 90px; height: 35px; vertical-align: middle;">TOTAAL BTW</td>`;
 
-            html += `<td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+            html += `<td colspan="4" style="border: 1px solid #ddd; padding: 4px; text-align: center; height: 35px; vertical-align: middle;">
 
-                <div style="font-size: 11px;">Totaal Inclusief: &euro;${totaalIncl.toFixed(2)}</div>
+                <div style="font-size: 9px;">Totaal Inclusief: &euro;${totaalIncl.toFixed(2)}</div>
 
-                <div style="font-size: 11px;">Totaal Exclusief: &euro;${totaalExcl.toFixed(2)}</div>
+                <div style="font-size: 9px;">Totaal Exclusief: &euro;${totaalExcl.toFixed(2)}</div>
 
-                <div style="font-size: 12px; color: #d32f2f; font-weight: bold;">Totaal BTW: &euro;${totaalBtw.toFixed(2)}</div>
+                <div style="font-size: 10px; color: #d32f2f; font-weight: bold;">Totaal BTW: &euro;${totaalBtw.toFixed(2)}</div>
 
             </td>`;
 
@@ -4395,6 +4724,34 @@
             const key = `btw${btwPercentage}`;
 
             dagontvangstenBulkData[day][key] = value;
+
+            // Update dagtotaal cell
+            updateDagTotaalCell(day);
+
+            // Trigger auto-save
+            triggerAutoSave('dagontvangsten');
+
+        }
+
+        function updateDagTotaalCell(day) {
+
+            const data = dagontvangstenBulkData[day];
+
+            if (!data) return;
+
+            const dagTotaal = (typeof data.btw6 === 'number' ? data.btw6 : 0) + 
+
+                             (typeof data.btw12 === 'number' ? data.btw12 : 0) + 
+
+                             (typeof data.btw21 === 'number' ? data.btw21 : 0);
+
+            const cell = document.querySelector(`.dag-totaal[data-day="${day}"]`);
+
+            if (cell) {
+
+                cell.textContent = dagTotaal > 0 ? dagTotaal.toFixed(2) : '';
+
+            }
 
         }
 
@@ -4472,6 +4829,11 @@
 
             
 
+            // Update dagtotaal cells for all days
+            for (let day = 1; day <= daysInMonth; day++) {
+                updateDagTotaalCell(day);
+            }
+
             // Update totalen row (second to last row)
 
             const rows = table.querySelectorAll('tbody tr');
@@ -4482,17 +4844,17 @@
 
                 const cells = totalRow.querySelectorAll('td');
 
-                if (cells.length >= 4) {
+                if (cells.length >= 5) {
 
                     // 6% BTW
 
                     cells[1].innerHTML = `
 
-                        <div style="font-size: 10px;">Incl: &euro;${totaal6Incl.toFixed(2)}</div>
+                        <div style="font-size: 8px; line-height: 1.2;">Incl: &euro;${totaal6Incl.toFixed(2)}</div>
 
-                        <div style="font-size: 10px;">Excl: &euro;${totaal6Excl.toFixed(2)}</div>
+                        <div style="font-size: 8px; line-height: 1.2;">Excl: &euro;${totaal6Excl.toFixed(2)}</div>
 
-                        <div style="font-size: 10px; color: #d32f2f;">BTW: &euro;${btw6.toFixed(2)}</div>
+                        <div style="font-size: 8px; line-height: 1.2; color: #d32f2f;">BTW: &euro;${btw6.toFixed(2)}</div>
 
                     `;
 
@@ -4500,11 +4862,11 @@
 
                     cells[2].innerHTML = `
 
-                        <div style="font-size: 10px;">Incl: &euro;${totaal12Incl.toFixed(2)}</div>
+                        <div style="font-size: 8px; line-height: 1.2;">Incl: &euro;${totaal12Incl.toFixed(2)}</div>
 
-                        <div style="font-size: 10px;">Excl: &euro;${totaal12Excl.toFixed(2)}</div>
+                        <div style="font-size: 8px; line-height: 1.2;">Excl: &euro;${totaal12Excl.toFixed(2)}</div>
 
-                        <div style="font-size: 10px; color: #d32f2f;">BTW: &euro;${btw12.toFixed(2)}</div>
+                        <div style="font-size: 8px; line-height: 1.2; color: #d32f2f;">BTW: &euro;${btw12.toFixed(2)}</div>
 
                     `;
 
@@ -4512,13 +4874,19 @@
 
                     cells[3].innerHTML = `
 
-                        <div style="font-size: 10px;">Incl: &euro;${totaal21Incl.toFixed(2)}</div>
+                        <div style="font-size: 8px; line-height: 1.2;">Incl: &euro;${totaal21Incl.toFixed(2)}</div>
 
-                        <div style="font-size: 10px;">Excl: &euro;${totaal21Excl.toFixed(2)}</div>
+                        <div style="font-size: 8px; line-height: 1.2;">Excl: &euro;${totaal21Excl.toFixed(2)}</div>
 
-                        <div style="font-size: 10px; color: #d32f2f;">BTW: &euro;${btw21.toFixed(2)}</div>
+                        <div style="font-size: 8px; line-height: 1.2; color: #d32f2f;">BTW: &euro;${btw21.toFixed(2)}</div>
 
                     `;
+
+                    // Dagtotaal kolom totaal
+                    const totaalDagTotaal = totaal6Incl + totaal12Incl + totaal21Incl;
+                    if (cells[4]) {
+                        cells[4].innerHTML = `<div style="font-size: 9px; font-weight: bold;">&euro;${totaalDagTotaal.toFixed(2)}</div>`;
+                    }
 
                 }
 
@@ -4562,13 +4930,13 @@
 
 
 
-        async function saveDagontvangstenBulk() {
+        async function saveDagontvangstenBulk(silent = false) {
 
             const maand = document.getElementById('dagontvangsten-maand').value;
 
             if (!maand) {
 
-                alert('Selecteer eerst een maand');
+                if (!silent) alert('Selecteer eerst een maand');
 
                 return;
 
@@ -4674,7 +5042,9 @@
 
 
 
-            alert(`Ô£à ${saved} dagontvangsten opgeslagen!`);
+            if (!silent) {
+                alert(`Ô£à ${saved} dagontvangsten opgeslagen!`);
+            }
 
             loadDagontvangstenBulk();
 
@@ -4824,6 +5194,7 @@
 
                     
 
+                    const dagTotaal = btw6Val + btw12Val + btw21Val;
                     tableData.push([
 
                         day.toString(),
@@ -4832,7 +5203,9 @@
 
                         btw12Val > 0 ? '&euro;' + btw12Val.toFixed(2) : '',
 
-                        btw21Val > 0 ? '&euro;' + btw21Val.toFixed(2) : ''
+                        btw21Val > 0 ? '&euro;' + btw21Val.toFixed(2) : '',
+
+                        dagTotaal > 0 ? '&euro;' + dagTotaal.toFixed(2) : ''
 
                     ]);
 
@@ -4886,7 +5259,9 @@
 
                 '',
 
-                ''
+                '',
+
+                '&euro;' + totaal6Incl.toFixed(2)
 
             ]);
 
@@ -4898,7 +5273,9 @@
 
                 '&euro;' + totaal12Incl.toFixed(2),
 
-                ''
+                '',
+
+                '&euro;' + totaal12Incl.toFixed(2)
 
             ]);
 
@@ -4909,6 +5286,8 @@
                 '',
 
                 '',
+
+                '&euro;' + totaal21Incl.toFixed(2),
 
                 '&euro;' + totaal21Incl.toFixed(2)
 
@@ -4924,6 +5303,7 @@
 
             
 
+            const totaalDagTotaal = totaal6Incl + totaal12Incl + totaal21Incl;
             tableData.push([
 
                 'TOTAAL',
@@ -4932,7 +5312,9 @@
 
                 '&euro;' + totaalExcl.toFixed(2),
 
-                '&euro;' + totaalBtw.toFixed(2)
+                '&euro;' + totaalBtw.toFixed(2),
+
+                '&euro;' + totaalDagTotaal.toFixed(2)
 
             ]);
 
@@ -4942,7 +5324,7 @@
 
             doc.autoTable({
 
-                head: [['Dag', '6% BTW (Incl.)', '12% BTW (Incl.)', '21% BTW (Incl.)']],
+                head: [['Dag', '6% BTW (Incl.)', '12% BTW (Incl.)', '21% BTW (Incl.)', 'Dagtotaal']],
 
                 body: tableData.slice(0, -4), // All rows except summary rows
 
@@ -4958,11 +5340,13 @@
 
                     0: { cellWidth: 20, halign: 'center' },
 
-                    1: { cellWidth: 50, halign: 'right' },
+                    1: { cellWidth: 40, halign: 'right' },
 
-                    2: { cellWidth: 50, halign: 'right' },
+                    2: { cellWidth: 40, halign: 'right' },
 
-                    3: { cellWidth: 50, halign: 'right' }
+                    3: { cellWidth: 40, halign: 'right' },
+
+                    4: { cellWidth: 40, halign: 'right', fontStyle: 'bold' }
 
                 }
 
@@ -5062,184 +5446,7 @@
 
 
 
-        // Update import handler to support dagontvangsten
-
-        async function handleImport() {
-
-            const fileInput = document.getElementById('import-file');
-
-            const importType = document.getElementById('import-type').value;
-
-            const resultDiv = document.getElementById('import-result');
-
-            
-
-            if (!fileInput.files || fileInput.files.length === 0) {
-
-                resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Selecteer eerst een bestand</div>';
-
-                return;
-
-            }
-
-
-
-            const file = fileInput.files[0];
-
-            resultDiv.innerHTML = '<div class="alert alert-info">Importeren... Even geduld...</div>';
-
-
-
-            try {
-
-                if (!window.electronAPI) {
-
-                    resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Import functionaliteit niet beschikbaar. Start de app via Electron.</div>';
-
-                    return;
-
-                }
-
-
-
-                const reader = new FileReader();
-
-                reader.onload = async (e) => {
-
-                    try {
-
-                        const arrayBuffer = e.target.result;
-
-                        const bytes = new Uint8Array(arrayBuffer);
-
-                        let binary = '';
-
-                        for (let i = 0; i < bytes.byteLength; i++) {
-
-                            binary += String.fromCharCode(bytes[i]);
-
-                        }
-
-                        const base64 = btoa(binary);
-
-                        
-
-                        console.log('Importing file:', file.name, 'Type:', importType);
-
-                        
-
-                        let result;
-
-                        if (importType === 'dagontvangsten') {
-
-                            result = await window.electronAPI.importDagontvangsten(base64, file.name);
-
-                        } else if (importType === 'gratis-cola') {
-
-                            result = await window.electronAPI.importGratisCola(base64, file.name);
-
-                        } else {
-
-                            result = await window.electronAPI.importExcel(base64, file.name, importType);
-
-                        }
-
-                        
-
-                        console.log('Import result:', result);
-
-                        
-
-                        // Check if anything was imported
-                        const totalImported = (result.imported.werknemers || 0) + (result.imported.kilometers || 0) + (result.imported.uren || 0);
-                        
-                        if (totalImported === 0 && result.debug) {
-                            // Show warning with debug info
-                            const debugInfo = `
-                                <br><strong>Debug Informatie:</strong><br>
-                                Totaal rijen in Excel: ${result.debug.totalRows || 0}<br>
-                                Beschikbare kolommen: ${result.debug.availableColumns ? result.debug.availableColumns.join(', ') : 'Geen'}<br>
-                                ${result.debug.firstRowSample ? `<br>Eerste rij voorbeeld:<br><pre style="font-size: 10px; background: #f5f5f5; padding: 5px; overflow: auto; max-height: 200px;">${JSON.stringify(result.debug.firstRowSample, null, 2)}</pre>` : ''}
-                                <br><strong>Mogelijke oorzaken:</strong><br>
-                                1. Kolomnamen komen niet overeen<br>
-                                2. Werknemers bestaan niet in database<br>
-                                3. Datum format wordt niet herkend<br>
-                                4. Data is leeg of ongeldig<br>
-                            `;
-                            
-                            resultDiv.innerHTML = `<div class="alert" style="background: #fff3cd; color: #856404; border: 1px solid #ffeaa7;">
-                                <strong>⚠️ Import voltooid, maar 0 items geïmporteerd!</strong>
-                                ${debugInfo}
-                            </div>`;
-                        } else {
-                            // Show success
-                            resultDiv.innerHTML = `<div class="alert alert-success">
-                                <strong>✅ Import succesvol!</strong><br>
-                                ${importType === 'dagontvangsten' 
-                                    ? `Records: ${result.imported.records || 0}`
-                                    : importType === 'gratis-cola'
-                                        ? `Records: ${result.imported.records || 0}`
-                                        : importType === 'kilometers' 
-                                            ? `Kilometers: ${result.imported.kilometers || 0}`
-                                            : `Werknemers: ${result.imported.werknemers || 0}, Uren/Afwezigheden: ${result.imported.uren || 0}`}
-                            </div>`;
-                        }
-
-                        fileInput.value = '';
-
-                        
-
-                        // Reload data
-
-                        await loadWerknemers();
-
-                        if (currentPage === 'uren') await loadUren();
-
-                        if (currentPage === 'kilometers') await loadKilometers();
-
-                        if (currentPage === 'uren-bulk') await loadUrenBulk();
-
-                        if (currentPage === 'kilometers-bulk') await loadKmBulk();
-
-                        if (currentPage === 'dagontvangsten') await loadDagontvangstenBulk();
-
-                        if (currentPage === 'gratis-cola') await loadGratisColaBulk();
-
-                    } catch (error) {
-
-                        console.error('Import error:', error);
-
-                        resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
-
-                            <strong>Fout bij importeren:</strong><br>
-
-                            ${error.message || error.toString()}
-
-                        </div>`;
-
-                    }
-
-                };
-
-                reader.onerror = (error) => {
-
-                    console.error('File read error:', error);
-
-                    resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Fout bij lezen van bestand</div>';
-
-                };
-
-                reader.readAsArrayBuffer(file);
-
-            } catch (error) {
-
-                console.error('Import error:', error);
-
-                resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">Fout: ${error.message || error.toString()}</div>`;
-
-            }
-
-        }
+        // REMOVED: Duplicate handleImport function - using the one above (line 4182)
 
 
 
@@ -5331,7 +5538,7 @@
 
             let html = '<div style="overflow-x: auto; margin-top: 20px;">';
 
-            html += '<table style="font-size: 11px; border-collapse: collapse; min-width: 100%;" class="gratis-cola-bulk-table">';
+            html += '<table style="font-size: 8px; border-collapse: collapse; min-width: 100%;" class="gratis-cola-bulk-table">';
 
             
 
@@ -5339,17 +5546,13 @@
 
             html += '<thead><tr style="background: #4472C4; color: white; font-weight: bold;">';
 
-            html += '<th style="border: 1px solid #ddd; padding: 8px; text-align: center; min-width: 60px; position: sticky; left: 0; background: #4472C4; z-index: 10;">Dag</th>';
-
-            
-
             // Add headers for each month (4 columns per month: date, value, 0, 0)
 
             for (let month = 1; month <= 12; month++) {
 
                 const monthName = monthNames[month - 1];
 
-                html += `<th colspan="4" style="border: 1px solid #ddd; padding: 4px; text-align: center; min-width: 200px; background: #70AD47;">${monthName}</th>`;
+                html += `<th colspan="4" style="border: 1px solid #ddd; padding: 2px; text-align: center; min-width: 130px; background: #70AD47; font-size: 9px;">${monthName}</th>`;
 
             }
 
@@ -5361,17 +5564,15 @@
 
             html += '<tr style="background: #D9E1F2; font-weight: bold;">';
 
-            html += '<th style="border: 1px solid #ddd; padding: 4px; position: sticky; left: 0; background: #D9E1F2; z-index: 9;"></th>';
-
             for (let month = 1; month <= 12; month++) {
 
-                html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 9px;">Datum</th>';
+                html += '<th style="border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 8px; width: 35px;">Datum</th>';
 
-                html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 9px;">Aantal</th>';
+                html += '<th style="border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 8px; width: 30px;">Gratis</th>';
 
-                html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 9px;">0</th>';
+                html += '<th style="border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 8px; width: 30px;">Aantal</th>';
 
-                html += '<th style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 9px;">0</th>';
+                html += '<th style="border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 8px; width: 30px;">Totaal</th>';
 
             }
 
@@ -5385,10 +5586,6 @@
 
                 html += `<tr>`;
 
-                html += `<td style="border: 1px solid #ddd; padding: 6px; font-weight: bold; text-align: center; background: #f8f9fa; position: sticky; left: 0; z-index: 5;">${day}</td>`;
-
-                
-
                 for (let month = 1; month <= 12; month++) {
 
                     const date = new Date(year, month - 1, day);
@@ -5401,11 +5598,10 @@
 
                     
 
-                    // Date cell (read-only, shows date)
+                    // Date cell (read-only, shows date) - shorter format
+                    const dateStr = isValidDate ? `${day}/${month}` : '';
 
-                    const dateStr = isValidDate ? `${day}/${month}/${year}` : '';
-
-                    html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 9px; background: ${isValidDate ? '#fff' : '#f0f0f0'}; width: 50px;">${dateStr}</td>`;
+                    html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 8px; background: ${isValidDate ? '#fff' : '#f0f0f0'}; width: 35px;">${dateStr}</td>`;
 
                     
 
@@ -5415,13 +5611,13 @@
 
                         // Gratis gegeven
 
-                        html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center; width: 45px;">
+                        html += `<td style="border: 1px solid #ddd; padding: 1px; text-align: center; width: 30px;">
 
                             <input type="number" value="${data.gratis !== '' ? data.gratis : ''}" step="1" min="0" 
 
                                 data-day="${day}" data-month="${month}" data-type="gratis"
 
-                                style="width: 100%; border: none; text-align: center; padding: 2px; font-size: 10px; max-width: 45px;" 
+                                style="width: 100%; border: none; text-align: center; padding: 1px; font-size: 9px; max-width: 30px;" 
 
                                 onchange="updateGratisColaCell(${day}, ${month}, 'gratis', parseFloat(this.value) || ''); updateGratisColaTotals();">
 
@@ -5431,13 +5627,13 @@
 
                         // Verkocht
 
-                        html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center; width: 45px;">
+                        html += `<td style="border: 1px solid #ddd; padding: 1px; text-align: center; width: 30px;">
 
                             <input type="number" value="${data.verkocht !== '' ? data.verkocht : ''}" step="1" min="0" 
 
                                 data-day="${day}" data-month="${month}" data-type="verkocht"
 
-                                style="width: 100%; border: none; text-align: center; padding: 2px; font-size: 10px; max-width: 45px;" 
+                                style="width: 100%; border: none; text-align: center; padding: 1px; font-size: 9px; max-width: 30px;" 
 
                                 onchange="updateGratisColaCell(${day}, ${month}, 'verkocht', parseFloat(this.value) || ''); updateGratisColaTotals();">
 
@@ -5449,7 +5645,7 @@
 
                         const totaal = (typeof data.verkocht === 'number' && data.verkocht > 0) ? (data.verkocht * 2.30).toFixed(2) : '';
 
-                        html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 10px; background: #f0f0f0; font-weight: bold; width: 45px;">
+                        html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 8px; background: #f0f0f0; font-weight: bold; width: 30px;">
 
                             ${totaal}
 
@@ -5457,11 +5653,11 @@
 
                     } else {
 
-                        html += `<td style="border: 1px solid #ddd; padding: 4px; opacity: 0.3; background: #f0f0f0; width: 45px;"></td>`;
+                        html += `<td style="border: 1px solid #ddd; padding: 2px; opacity: 0.3; background: #f0f0f0; width: 30px;"></td>`;
 
-                        html += `<td style="border: 1px solid #ddd; padding: 4px; opacity: 0.3; background: #f0f0f0; width: 45px;"></td>`;
+                        html += `<td style="border: 1px solid #ddd; padding: 2px; opacity: 0.3; background: #f0f0f0; width: 30px;"></td>`;
 
-                        html += `<td style="border: 1px solid #ddd; padding: 4px; opacity: 0.3; background: #f0f0f0; width: 45px;"></td>`;
+                        html += `<td style="border: 1px solid #ddd; padding: 2px; opacity: 0.3; background: #f0f0f0; width: 30px;"></td>`;
 
                     }
 
@@ -5475,61 +5671,7 @@
 
             
 
-            // Totalen row (row 32 in Excel)
-
-            html += '<tr style="background: #D9E1F2; font-weight: bold;">';
-
-            html += '<td style="border: 1px solid #ddd; padding: 6px; position: sticky; left: 0; background: #D9E1F2; z-index: 5;">TOTAAL</td>';
-
-            
-
-            for (let month = 1; month <= 12; month++) {
-
-                let monthTotalGratis = 0;
-
-                let monthTotalVerkocht = 0;
-
-                const daysInMonth = new Date(year, month, 0).getDate();
-
-                
-
-                for (let day = 1; day <= daysInMonth; day++) {
-
-                    const data = gratisColaBulkData[day] && gratisColaBulkData[day][month];
-
-                    if (data) {
-
-                        if (typeof data.gratis === 'number' && data.gratis > 0) monthTotalGratis += data.gratis;
-
-                        if (typeof data.verkocht === 'number' && data.verkocht > 0) monthTotalVerkocht += data.verkocht;
-
-                    }
-
-                }
-
-                
-
-                const monthTotalTotaal = monthTotalVerkocht * 2.30;
-
-                
-
-                // Total row: empty date, totals for gratis, verkocht, calculated total
-
-                html += `<td style="border: 1px solid #ddd; padding: 4px; background: #D9E1F2;"></td>`;
-
-                html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #D9E1F2; width: 45px;">${monthTotalGratis}</td>`;
-
-                html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #D9E1F2; width: 45px;">${monthTotalVerkocht}</td>`;
-
-                html += `<td style="border: 1px solid #ddd; padding: 6px; text-align: center; background: #D9E1F2; width: 45px;">${monthTotalTotaal > 0 ? monthTotalTotaal.toFixed(2) : ''}</td>`;
-
-            }
-
-            html += '</tr>';
-
-            
-
-            // Grand total row (row 34 in Excel - shows total of all months)
+            // Grand total row (shows total of all months)
 
             let grandTotalGratis = 0;
 
@@ -5563,17 +5705,15 @@
 
             html += '<tr style="background: #C5E0B4; font-weight: bold;">';
 
-            html += `<td style="border: 1px solid #ddd; padding: 8px; position: sticky; left: 0; background: #C5E0B4; z-index: 5;">TOTAAL TOTAAL</td>`;
+            html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center; background: #C5E0B4; width: 35px;"></td>`;
 
-            html += `<td style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #C5E0B4;"></td>`;
+            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; width: 30px; font-size: 9px;">${grandTotalGratis}</td>`;
 
-            html += `<td style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #C5E0B4; width: 45px;">${grandTotalGratis}</td>`;
+            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; width: 30px; font-size: 9px;">${grandTotalVerkocht}</td>`;
 
-            html += `<td style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #C5E0B4; width: 45px;">${grandTotalVerkocht}</td>`;
+            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; width: 30px; font-size: 9px;">${grandTotalTotaal > 0 ? grandTotalTotaal.toFixed(2) : ''}</td>`;
 
-            html += `<td style="border: 1px solid #ddd; padding: 8px; text-align: center; background: #C5E0B4; width: 45px;">${grandTotalTotaal > 0 ? grandTotalTotaal.toFixed(2) : ''}</td>`;
-
-            html += `<td colspan="${12 * 4 - 4}" style="border: 1px solid #ddd; padding: 8px; background: #C5E0B4;"></td>`;
+            html += `<td colspan="${12 * 4 - 4}" style="border: 1px solid #ddd; padding: 2px; background: #C5E0B4;"></td>`;
 
             html += '</tr>';
 
@@ -5617,7 +5757,8 @@
 
             gratisColaBulkData[day][month][type] = value;
 
-            
+            // Trigger auto-save
+            triggerAutoSave('gratisCola');
 
             // Update calculated total cell in the table
 
@@ -5827,13 +5968,13 @@
 
 
 
-        async function saveGratisColaBulk() {
+        async function saveGratisColaBulk(silent = false) {
 
             const jaar = document.getElementById('gratis-cola-jaar').value;
 
             if (!jaar) {
 
-                alert('Selecteer eerst een jaar');
+                if (!silent) alert('Selecteer eerst een jaar');
 
                 return;
 
@@ -5923,7 +6064,9 @@
 
 
 
-            alert(`Ô£à ${saved} gratis cola records opgeslagen!`);
+            if (!silent) {
+                alert(`Ô£à ${saved} gratis cola records opgeslagen!`);
+            }
 
             loadGratisColaBulk();
 

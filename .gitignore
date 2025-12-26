@@ -4,17 +4,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Next.js
+# Electron
 afwezigheidsplanning-app/.next/
 afwezigheidsplanning-app/out/
 afwezigheidsplanning-app/build/
 afwezigheidsplanning-app/dist/
 afwezigheidsplanning-app/.env*.local
 
-# Database
-afwezigheidsplanning-app/dev.db
-afwezigheidsplanning-app/dev.db-journal
-afwezigheidsplanning-app/prisma/migrations/
+# Database (JSON database wordt opgeslagen in userData)
+# Database bestanden worden automatisch opgeslagen door Electron
 
 # IDE
 .vscode/
@@ -42,7 +40,6 @@ logs/
 *.tmp
 *.temp
 
-# Excel files (optional - remove if you want to track them)
-*.xlsm
-*.xlsx
-
+# Excel files in data/ (optioneel - verwijder deze regel als je ze wilt tracken)
+# data/*.xlsm
+# data/*.xlsx

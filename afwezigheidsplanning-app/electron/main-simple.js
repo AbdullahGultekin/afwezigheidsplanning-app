@@ -64,6 +64,8 @@ ipcMain.handle('db:get', async (event, table) => {
     case 'afwezigheden': return databaseOps.getAfwezigheden();
     case 'kilometers': return databaseOps.getKilometers();
     case 'maandKmStanden': return databaseOps.getMaandKmStanden();
+    case 'dagontvangsten': return databaseOps.getDagontvangsten();
+    case 'gratisCola': return databaseOps.getGratisCola();
     default: return [];
   }
 });
@@ -80,6 +82,8 @@ ipcMain.handle('db:add', async (event, table, item) => {
     case 'afwezigheden': return databaseOps.createAfwezigheid(item);
     case 'kilometers': return databaseOps.createKilometer(item);
     case 'maandKmStanden': return databaseOps.createMaandKmStand(item);
+    case 'dagontvangsten': return databaseOps.createDagontvangst(item);
+    case 'gratisCola': return databaseOps.createGratisCola(item);
     default: return null;
   }
 });
@@ -850,9 +854,61 @@ ipcMain.handle('import:dagontvangsten', async (event, base64, fileName) => {
   try {
     const buffer = Buffer.from(base64, 'base64');
     const workbook = XLSX.read(buffer, { type: 'buffer' });
-    // Process dagontvangsten import
-    return { success: true, message: 'Dagontvangsten import successful' };
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+    
+    let imported = { records: 0 };
+    
+    for (const row of jsonData) {
+      // Expected columns: Datum, BTW 6%, BTW 12%, BTW 21%, Opmerking (optional)
+      const datum = row['Datum'] || row['datum'] || row['DATE'] || row['date'] || '';
+      const btw6 = parseFloat(row['BTW 6%'] || row['btw 6%'] || row['6%'] || row['6'] || 0) || 0;
+      const btw12 = parseFloat(row['BTW 12%'] || row['btw 12%'] || row['12%'] || row['12'] || 0) || 0;
+      const btw21 = parseFloat(row['BTW 21%'] || row['btw 21%'] || row['21%'] || row['21'] || 0) || 0;
+      const opmerking = row['Opmerking'] || row['opmerking'] || row['Comment'] || row['comment'] || null;
+      
+      if (!datum) continue;
+      
+      let dateObj;
+      if (datum instanceof Date) {
+        dateObj = datum;
+      } else if (typeof datum === 'number') {
+        dateObj = new Date((datum - 25569) * 86400 * 1000);
+      } else if (typeof datum === 'string') {
+        dateObj = new Date(datum);
+        if (isNaN(dateObj.getTime()) && datum.match(/^\d+(\.\d+)?$/)) {
+          const excelDate = parseFloat(datum);
+          dateObj = new Date((excelDate - 25569) * 86400 * 1000);
+        }
+      } else {
+        dateObj = new Date(datum);
+      }
+      
+      if (!dateObj || isNaN(dateObj.getTime())) continue;
+      
+      const totaal = btw6 + btw12 + btw21;
+      
+      if (totaal > 0) {
+        databaseOps.createDagontvangst({
+          datum: dateObj.toISOString(),
+          totaal: totaal,
+          btw6: btw6,
+          btw12: btw12,
+          btw21: btw21,
+          opmerking: opmerking
+        });
+        imported.records++;
+      }
+    }
+    
+    return { 
+      success: true, 
+      message: 'Dagontvangsten import successful',
+      imported 
+    };
   } catch (error) {
+    console.error('Dagontvangsten import error:', error);
     return { success: false, error: error.message };
   }
 });
@@ -861,9 +917,54 @@ ipcMain.handle('import:gratiscola', async (event, base64, fileName) => {
   try {
     const buffer = Buffer.from(base64, 'base64');
     const workbook = XLSX.read(buffer, { type: 'buffer' });
-    // Process gratis cola import
-    return { success: true, message: 'Gratis cola import successful' };
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+    
+    let imported = { records: 0 };
+    
+    for (const row of jsonData) {
+      // Expected columns: Datum, Gratis, Verkocht
+      const datum = row['Datum'] || row['datum'] || row['DATE'] || row['date'] || '';
+      const gratis = parseFloat(row['Gratis'] || row['gratis'] || row['GRATIS'] || 0) || 0;
+      const verkocht = parseFloat(row['Verkocht'] || row['verkocht'] || row['VERKOCHT'] || 0) || 0;
+      
+      if (!datum) continue;
+      
+      let dateObj;
+      if (datum instanceof Date) {
+        dateObj = datum;
+      } else if (typeof datum === 'number') {
+        dateObj = new Date((datum - 25569) * 86400 * 1000);
+      } else if (typeof datum === 'string') {
+        dateObj = new Date(datum);
+        if (isNaN(dateObj.getTime()) && datum.match(/^\d+(\.\d+)?$/)) {
+          const excelDate = parseFloat(datum);
+          dateObj = new Date((excelDate - 25569) * 86400 * 1000);
+        }
+      } else {
+        dateObj = new Date(datum);
+      }
+      
+      if (!dateObj || isNaN(dateObj.getTime())) continue;
+      
+      if (gratis > 0 || verkocht > 0) {
+        databaseOps.createGratisCola({
+          datum: dateObj.toISOString(),
+          gratis: gratis,
+          verkocht: verkocht
+        });
+        imported.records++;
+      }
+    }
+    
+    return { 
+      success: true, 
+      message: 'Gratis cola import successful',
+      imported 
+    };
   } catch (error) {
+    console.error('Gratis cola import error:', error);
     return { success: false, error: error.message };
   }
 });

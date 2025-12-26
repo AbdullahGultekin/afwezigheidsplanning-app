@@ -10,7 +10,10 @@
     "lint": "eslint",
     "start:electron": "electron electron/main-simple.js",
     "build:electron": "electron-builder",
-    "build:electron:win": "electron-builder --win portable --config.win.forceCodeSigning=false"
+    "build:electron:win": "electron-builder --win --x64",
+    "build:electron:win:portable": "electron-builder --win portable --x64",
+    "build:electron:win:installer": "electron-builder --win nsis --x64",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

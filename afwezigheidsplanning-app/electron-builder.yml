@@ -1,21 +1,74 @@
 appId: com.pitapizza.afwezigheidsplanning
-productName: Pita Pizza Napoli
+productName: Afwezigheidsplanning App
+version: 1.0.0
+description: Werknemersafwezigheidsplanning App - Uren, Kilometers, Afwezigheden
+author: Pita Pizza Napoli
+copyright: Copyright © 2026 Pita Pizza Napoli
+
 directories:
   output: dist
   buildResources: build
+
 files:
   - 'electron/**/*'
   - 'app-simple/**/*'
   - 'package.json'
   - '!node_modules/**/*'
   - 'node_modules/xlsx/**/*'
+  - 'node_modules/jspdf/**/*'
+  - 'node_modules/jspdf-autotable/**/*'
+  - '!**/*.md'
+  - '!**/*.bat'
+  - '!**/.git/**/*'
+  - '!**/.next/**/*'
+  - '!**/prisma/**/*'
+
+# Windows configuratie
 win:
   target:
+    - target: nsis
+      arch:
+        - x64
     - target: portable
       arch:
         - x64
-  artifactName: '${productName}-Portable-${version}.${ext}'
+  artifactName: '${productName}-${version}-${arch}.${ext}'
+  # icon: 'build/icon.ico'  # Uncomment en voeg icon.ico toe voor custom icon
+  requestedExecutionLevel: asInvoker
   verifyUpdateCodeSignature: false
   forceCodeSigning: false
   signAndEditExecutable: false
+  
+  # NSIS Installer configuratie
+  nsis:
+    oneClick: false
+    allowToChangeInstallationDirectory: true
+    createDesktopShortcut: true
+    createStartMenuShortcut: true
+    shortcutName: 'Afwezigheidsplanning App'
+    include: 'build/installer.nsh'
+    # installerIcon: 'build/icon.ico'  # Uncomment voor custom icon
+    # uninstallerIcon: 'build/icon.ico'
+    # installerHeaderIcon: 'build/icon.ico'
+    deleteAppDataOnUninstall: false
+    runAfterFinish: true
+    menuCategory: 'Business'
+    displayLanguageSelector: false
+    language: '1043' # Nederlands
+
+# macOS configuratie (voor toekomstig gebruik)
+mac:
+  category: public.app-category.business
+  target:
+    - target: default
+      arch:
+        - x64
+        - arm64
+
+# Linux configuratie (voor toekomstig gebruik)
+linux:
+  category: Office
+  target:
+    - AppImage
+    - deb
 

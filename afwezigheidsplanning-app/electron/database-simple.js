@@ -9,7 +9,9 @@ let dbData = {
   urenregistraties: [],
   afwezigheden: [],
   kilometers: [],
-  maandKmStanden: []
+  maandKmStanden: [],
+  dagontvangsten: [],
+  gratisCola: []
 };
 
 function getDatabasePath() {
@@ -41,7 +43,9 @@ function loadDatabase() {
       urenregistraties: [],
       afwezigheden: [],
       kilometers: [],
-      maandKmStanden: []
+      maandKmStanden: [],
+      dagontvangsten: [],
+      gratisCola: []
     };
     saveDatabase();
   }
@@ -359,6 +363,108 @@ const databaseOps = {
     const index = dbData.maandKmStanden.findIndex(m => m.id === id);
     if (index !== -1) {
       dbData.maandKmStanden.splice(index, 1);
+      saveDatabase();
+    }
+  },
+
+  // Dagontvangsten
+  getDagontvangsten: (filters = {}) => {
+    let result = [...dbData.dagontvangsten];
+    if (filters.maand) {
+      result = result.filter(d => {
+        const date = new Date(d.datum);
+        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        return month === filters.maand;
+      });
+    }
+    return result.sort((a, b) => new Date(a.datum) - new Date(b.datum));
+  },
+
+  createDagontvangst: (data) => {
+    const id = generateId();
+    const dagontvangst = {
+      id,
+      datum: data.datum,
+      totaal: data.totaal || 0,
+      btw6: data.btw6 || 0,
+      btw12: data.btw12 || 0,
+      btw21: data.btw21 || 0,
+      opmerking: data.opmerking || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    dbData.dagontvangsten.push(dagontvangst);
+    saveDatabase();
+    return dagontvangst;
+  },
+
+  updateDagontvangst: (id, data) => {
+    const index = dbData.dagontvangsten.findIndex(d => d.id === id);
+    if (index !== -1) {
+      dbData.dagontvangsten[index] = {
+        ...dbData.dagontvangsten[index],
+        ...data,
+        updatedAt: new Date().toISOString()
+      };
+      saveDatabase();
+      return dbData.dagontvangsten[index];
+    }
+    return null;
+  },
+
+  deleteDagontvangst: (id) => {
+    const index = dbData.dagontvangsten.findIndex(d => d.id === id);
+    if (index !== -1) {
+      dbData.dagontvangsten.splice(index, 1);
+      saveDatabase();
+    }
+  },
+
+  // Gratis Cola
+  getGratisCola: (filters = {}) => {
+    let result = [...dbData.gratisCola];
+    if (filters.jaar) {
+      result = result.filter(g => {
+        const date = new Date(g.datum);
+        return date.getFullYear() === filters.jaar;
+      });
+    }
+    return result.sort((a, b) => new Date(a.datum) - new Date(b.datum));
+  },
+
+  createGratisCola: (data) => {
+    const id = generateId();
+    const gratisCola = {
+      id,
+      datum: data.datum,
+      gratis: data.gratis || 0,
+      verkocht: data.verkocht || 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    dbData.gratisCola.push(gratisCola);
+    saveDatabase();
+    return gratisCola;
+  },
+
+  updateGratisCola: (id, data) => {
+    const index = dbData.gratisCola.findIndex(g => g.id === id);
+    if (index !== -1) {
+      dbData.gratisCola[index] = {
+        ...dbData.gratisCola[index],
+        ...data,
+        updatedAt: new Date().toISOString()
+      };
+      saveDatabase();
+      return dbData.gratisCola[index];
+    }
+    return null;
+  },
+
+  deleteGratisCola: (id) => {
+    const index = dbData.gratisCola.findIndex(g => g.id === id);
+    if (index !== -1) {
+      dbData.gratisCola.splice(index, 1);
       saveDatabase();
     }
   }
