@@ -29,12 +29,24 @@ win:
     - target: portable
       arch:
         - x64
-  artifactName: '${productName}-${version}-${arch}.${ext}'
-  # icon: 'build/icon.ico'  # Uncomment en voeg icon.ico toe voor custom icon
+  icon: 'build/icon.ico'
   requestedExecutionLevel: asInvoker
   verifyUpdateCodeSignature: false
   forceCodeSigning: false
   signAndEditExecutable: false
+
+# NSIS installer configuratie
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  menuCategory: false
+  shortcutName: '${productName}'
+  installerIcon: 'build/icon.ico'
+  uninstallerIcon: 'build/icon.ico'
+  installerHeaderIcon: 'build/icon.ico'
+  artifactName: '${productName} Setup ${version}.${ext}'
   
 
 # macOS configuratie (voor toekomstig gebruik)

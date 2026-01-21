@@ -502,6 +502,8 @@
 
             <button onclick="showPage('import')">Import Excel</button>
 
+            <button onclick="showPage('backup')">Backup & Herstel</button>
+
         </div>
 
 
@@ -808,6 +810,29 @@
 
         </div>
 
+        <!-- Backup & Herstel -->
+        <div id="backup" class="content">
+            <h2>Backup & Herstel</h2>
+            
+            <div style="background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                <p><strong>Automatische Backups:</strong></p>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>Backups worden automatisch gemaakt voor belangrijke operaties (opslaan, importeren)</li>
+                    <li>De laatste 20 backups worden bewaard</li>
+                    <li>Backups worden opgeslagen in: <code>%APPDATA%\afwezigheidsplanning-app\backups\</code></li>
+                </ul>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <button class="btn btn-success" onclick="createManualBackup()">💾 Handmatige Backup Maken</button>
+                <button class="btn btn-primary" onclick="loadBackupList()" style="margin-left: 10px;">🔄 Backup Lijst Vernieuwen</button>
+            </div>
+            
+            <div id="backup-list" style="margin-top: 20px;">
+                <p>Laden...</p>
+            </div>
+        </div>
+
     </div>
 
 
@@ -824,11 +849,20 @@
 
     </div>
 
-    <!-- Load jsPDF libraries locally (before main script) -->
+    <!-- Load jsPDF and autoTable before main script -->
     <script src="libs/jspdf.umd.min.js"></script>
     <script src="libs/jspdf-autotable.min.js"></script>
 
     <script>
+
+        // Check if jsPDF is loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof window.jspdf === 'undefined') {
+                console.error('jsPDF library is not loaded. Check if libs/jspdf.umd.min.js exists.');
+            } else {
+                console.log('jsPDF library loaded successfully');
+            }
+        });
 
         let currentPage = 'werknemers';
 
@@ -876,9 +910,37 @@
 
             if (target.tagName === 'INPUT' && (target.type === 'text' || target.type === 'number')) {
 
+                // If clicking directly on input, allow it to work normally (don't interfere)
+
+                // Only handle selection, don't prevent default behavior
+
                 input = target;
 
                 cell = target.closest('td');
+
+                
+
+                if (cell && event.ctrlKey || event.metaKey) {
+
+                    // Multi-select mode for inputs
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+                    toggleCellSelection(cell, input);
+
+                } else if (cell && !selectedCells.has(cell)) {
+
+                    // Single select, but don't interfere with input focus
+
+                    clearAllSelections();
+
+                    selectCell(cell, input);
+
+                }
+
+                return; // Allow input to handle its own events
 
             } else if (target.tagName === 'TD') {
 
@@ -928,7 +990,7 @@
 
             
 
-            // Handle selection
+            // Handle selection when clicking on cell (not input)
 
             if (event.ctrlKey || event.metaKey) {
 
@@ -942,7 +1004,7 @@
 
             } else {
 
-                // Single select mode
+                // Single select mode - focus input when clicking on cell
 
                 if (!selectedCells.has(cell)) {
 
@@ -952,7 +1014,21 @@
 
                 }
 
-                // Don't prevent default - allow normal input focus
+                
+
+                // Focus the input immediately when clicking on cell
+
+                setTimeout(() => {
+
+                    input.focus();
+
+                    if (input.type === 'text') {
+
+                        input.select();
+
+                    }
+
+                }, 10);
 
             }
 
@@ -1082,6 +1158,7 @@
 
                     if (werknemerId && day) {
 
+                        // CRITICAL FIX: Set to empty string and trigger immediate save to persist the clear
                         kmBulkData[werknemerId][day] = '';
 
                         input.value = '';
@@ -1089,6 +1166,9 @@
                         // Update totals for this row
 
                         updateKmBulkRowTotals(input.closest('tr'), werknemerId);
+
+                        // Trigger immediate save to persist the cleared value
+                        triggerAutoSave('kilometers');
 
                         cleared++;
 
@@ -1182,6 +1262,171 @@
 
                 loadWerknemers();
 
+            });
+
+            
+
+            // Save all data before window closes - use synchronous approach for Electron
+            window.addEventListener('beforeunload', (event) => {
+                // Cancel any pending auto-save timers
+                if (typeof autoSaveTimers !== 'undefined') {
+                    for (const pageType in autoSaveTimers) {
+                        if (autoSaveTimers[pageType]) {
+                            clearTimeout(autoSaveTimers[pageType]);
+                        }
+                    }
+                }
+                
+                // Force immediate save of dagontvangsten - use sendBeacon or direct call
+                const dagontvangstenPage = document.getElementById('dagontvangsten');
+                if (dagontvangstenPage && dagontvangstenPage.classList.contains('active')) {
+                    // Save synchronously using navigator.sendBeacon won't work with async
+                    // Instead, we'll use a blocking approach
+                    try {
+                        // Trigger save - make it synchronous by not awaiting
+                        saveDagontvangstenBulk(true).catch(err => {
+                            console.error('Error saving dagontvangsten on unload:', err);
+                        });
+                    } catch (error) {
+                        console.error('Error triggering save on unload:', error);
+                    }
+                }
+            });
+            
+            // Also listen for Electron-specific close event via IPC
+            if (window.electronAPI && window.electronAPI.onWindowClose) {
+                window.electronAPI.onWindowClose(async () => {
+                    console.log('Window close event received - saving all data...');
+                    
+                    // First, save all current input values immediately
+                    const dagontvangstenPage = document.getElementById('dagontvangsten');
+                    if (dagontvangstenPage) {
+                        const table = document.querySelector('.dagontvangsten-bulk-table');
+                        if (table) {
+                            const inputs = table.querySelectorAll('input[data-day][data-btw]');
+                            inputs.forEach(input => {
+                                const day = parseInt(input.getAttribute('data-day'));
+                                const btw = parseInt(input.getAttribute('data-btw'));
+                                const value = input.value.trim();
+                                if (day && !isNaN(day) && btw !== null && btw !== undefined && !isNaN(btw)) {
+                                    if (!dagontvangstenBulkData[day]) {
+                                        dagontvangstenBulkData[day] = { btw6: '', btw12: '', btw21: '', opmerking: '' };
+                                    }
+                                    const key = `btw${btw}`;
+                                    if (value !== '' && value !== null && value !== undefined) {
+                                        const numValue = parseFloat(value);
+                                        dagontvangstenBulkData[day][key] = isNaN(numValue) ? '' : numValue;
+                                    } else {
+                                        dagontvangstenBulkData[day][key] = '';
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    
+                    // Save all data before window closes
+                    if (typeof autoSaveTimers !== 'undefined') {
+                        for (const pageType in autoSaveTimers) {
+                            if (autoSaveTimers[pageType]) {
+                                clearTimeout(autoSaveTimers[pageType]);
+                                try {
+                                    await autoSave(pageType);
+                                    console.log(`Auto-saved ${pageType}`);
+                                } catch (error) {
+                                    console.error('Error auto-saving on close:', error);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Force save dagontvangsten - wait for it to complete
+                    if (dagontvangstenPage) {
+                        try {
+                            console.log('Saving dagontvangsten before close...');
+                            // Save all current input values first
+                            const table = document.querySelector('.dagontvangsten-bulk-table');
+                            if (table) {
+                                const inputs = table.querySelectorAll('input[data-day][data-btw]');
+                                inputs.forEach(input => {
+                                    const day = parseInt(input.getAttribute('data-day'));
+                                    const btw = parseInt(input.getAttribute('data-btw'));
+                                    const value = input.value.trim();
+                                    if (day && !isNaN(day) && btw !== null && btw !== undefined && !isNaN(btw)) {
+                                        if (!dagontvangstenBulkData[day]) {
+                                            dagontvangstenBulkData[day] = { btw6: '', btw12: '', btw21: '', opmerking: '' };
+                                        }
+                                        const key = `btw${btw}`;
+                                        if (value !== '' && value !== null && value !== undefined) {
+                                            const numValue = parseFloat(value);
+                                            dagontvangstenBulkData[day][key] = isNaN(numValue) ? '' : numValue;
+                                        } else {
+                                            dagontvangstenBulkData[day][key] = '';
+                                        }
+                                    }
+                                });
+                            }
+                            await saveDagontvangstenBulk(true);
+                            console.log('Dagontvangsten saved successfully before close');
+                            
+                            // CRITICAL: Force database to save to disk explicitly
+                            if (window.db && window.db.forceSave) {
+                                try {
+                                    await window.db.forceSave();
+                                    console.log('Database force saved to disk');
+                                } catch (error) {
+                                    console.error('Error forcing database save:', error);
+                                }
+                            }
+                            
+                            // Small delay to ensure database write is complete
+                            await new Promise(resolve => setTimeout(resolve, 200));
+                        } catch (error) {
+                            console.error('Error saving dagontvangsten on close:', error);
+                        }
+                    }
+                    
+                    // Signal that save is complete
+                    if (window.electronAPI && window.electronAPI.saveComplete) {
+                        console.log('Sending save-complete signal');
+                        window.electronAPI.saveComplete();
+                    }
+                });
+            }
+            
+            // Periodic save every 10 seconds as backup
+            // Store interval ID so it can be cleaned up
+            let dagontvangstenAutoSaveInterval = null;
+            
+            function startDagontvangstenAutoSave() {
+                // Clear existing interval if any
+                if (dagontvangstenAutoSaveInterval) {
+                    clearInterval(dagontvangstenAutoSaveInterval);
+                }
+                
+                dagontvangstenAutoSaveInterval = setInterval(() => {
+                    const dagontvangstenPage = document.getElementById('dagontvangsten');
+                    if (dagontvangstenPage && dagontvangstenPage.classList.contains('active')) {
+                        // Save silently in background
+                        saveDagontvangstenBulk(true).catch(err => {
+                            console.error('Error in periodic save:', err);
+                        });
+                    }
+                }, 10000); // Every 10 seconds
+            }
+            
+            function stopDagontvangstenAutoSave() {
+                if (dagontvangstenAutoSaveInterval) {
+                    clearInterval(dagontvangstenAutoSaveInterval);
+                    dagontvangstenAutoSaveInterval = null;
+                }
+            }
+            
+            // Start auto-save when page loads
+            startDagontvangstenAutoSave();
+            
+            // Clean up interval when page is unloaded
+            window.addEventListener('beforeunload', () => {
+                stopDagontvangstenAutoSave();
             });
 
 
@@ -1286,15 +1531,14 @@
 
                 if (jaarInput && !jaarInput.value) {
 
-                    // Set default to 2026 or current year if it's 2026 or later
-
-                    const currentYear = new Date().getFullYear();
-
-                    jaarInput.value = currentYear >= 2026 ? currentYear.toString() : '2026';
+                    jaarInput.value = new Date().getFullYear().toString();
 
                 }
 
                 await loadGratisColaBulk();
+
+            } else if (page === 'backup') {
+                await loadBackupList();
 
             }
 
@@ -1342,9 +1586,14 @@
 
 
 
-            let html = '<table><thead><tr><th>Naam</th><th>Email</th><th>Nummerplaat</th><th>Status</th><th>Acties</th></tr></thead><tbody>';
+            let html = '<table><thead><tr><th>Naam</th><th>Email</th><th>Nummerplaat</th><th>Type</th><th>Status</th><th>Acties</th></tr></thead><tbody>';
 
             werknemers.forEach(w => {
+                const type = w.type || 'werknemer';
+                const status = w.status || (w.actief !== false ? 'actief' : 'inactief');
+                const typeLabel = type === 'student' ? 'Student' : 'Werknemer';
+                const statusLabel = status === 'actief' ? 'Actief' : 'Inactief';
+                const statusColor = status === 'actief' ? 'green' : 'red';
 
                 html += `<tr>
 
@@ -1354,7 +1603,9 @@
 
                     <td>${w.nummerplaat || '-'}</td>
 
-                    <td>${w.actief !== false ? '<span style="color: green;">Actief</span>' : '<span style="color: red;">Inactief</span>'}</td>
+                    <td>${typeLabel}</td>
+
+                    <td><span style="color: ${statusColor};">${statusLabel}</span></td>
 
                     <td>
 
@@ -1407,6 +1658,34 @@
                         <label>Nummerplaat</label>
 
                         <input type="text" id="wn-nummerplaat">
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Type *</label>
+
+                        <select id="wn-type" required>
+
+                            <option value="werknemer">Werknemer</option>
+
+                            <option value="student">Student</option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Status *</label>
+
+                        <select id="wn-status" required>
+
+                            <option value="actief">Actief</option>
+
+                            <option value="inactief">Inactief</option>
+
+                        </select>
 
                     </div>
 
@@ -1470,6 +1749,34 @@
 
                     </div>
 
+                    <div class="form-group">
+
+                        <label>Type *</label>
+
+                        <select id="wn-type" required>
+
+                            <option value="werknemer" ${(w.type || 'werknemer') === 'werknemer' ? 'selected' : ''}>Werknemer</option>
+
+                            <option value="student" ${w.type === 'student' ? 'selected' : ''}>Student</option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Status *</label>
+
+                        <select id="wn-status" required>
+
+                            <option value="actief" ${(w.status || (w.actief !== false ? 'actief' : 'inactief')) === 'actief' ? 'selected' : ''}>Actief</option>
+
+                            <option value="inactief" ${(w.status || (w.actief !== false ? 'actief' : 'inactief')) === 'inactief' ? 'selected' : ''}>Inactief</option>
+
+                        </select>
+
+                    </div>
+
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
 
                         <button type="submit" class="btn btn-primary">Opslaan</button>
@@ -1500,7 +1807,11 @@
 
                 nummerplaat: document.getElementById('wn-nummerplaat').value || null,
 
-                actief: true
+                type: document.getElementById('wn-type').value,
+
+                status: document.getElementById('wn-status').value,
+
+                actief: document.getElementById('wn-status').value === 'actief' // Backward compatibility
 
             };
 
@@ -2117,6 +2428,7 @@
                     );
 
                     // Only set values if they exist, otherwise leave empty
+                    // Fix: Handle 0 as a valid value (not falsy)
 
                     urenBulkData[w.id][day] = {
 
@@ -2188,7 +2500,8 @@
 
                     const data = isInMonth ? (urenBulkData[w.id][day] || { uren: '', afwezigheid: '' }) : null;
 
-                    const urenValue = data ? (data.uren || '') : '';
+                    // Fix: Properly handle uren value, including 0 (which is falsy but valid)
+                    const urenValue = data && data.uren !== null && data.uren !== undefined && data.uren !== '' ? data.uren : '';
 
                     const afwezigheidValue = data ? (data.afwezigheid || '') : '';
 
@@ -2256,19 +2569,25 @@
 
                                 style="width: 100%; height: 100%; border: none; text-align: center; font-weight: bold; background: ${bgColor}; color: ${textColor}; font-size: 12px; padding: 0;" 
 
-                                onchange="updateUrenBulkCell('${w.id}', ${day}, 'afwezigheid', this.value.toUpperCase()); updateCellColor(this); updateTotals();" 
+                                onchange="handleUrenBulkInput('${w.id}', ${day}, this.value);" 
 
-                                onkeyup="this.value = this.value.toUpperCase(); updateCellColorOnKeyup(this); if(this.value && !['A','V','S',''].includes(this.value)) { this.value=''; updateCellColor(this); }"
+                                onkeydown="if(event.key === 'Enter') { handleUrenBulkInput('${w.id}', ${day}, this.value); this.blur(); event.preventDefault(); return false; } if(event.key === 'Escape') { this.value = '${afwezigheidValue}'; handleUrenBulkInput('${w.id}', ${day}, '${afwezigheidValue}'); this.blur(); event.preventDefault(); return false; } if(/[0-9.]/.test(event.key)) { this.removeAttribute('maxlength'); this.value = event.key; this.style.fontWeight = 'normal'; this.style.color = ''; this.style.background = ''; const cell = this.closest('td'); if(cell) cell.style.background = ''; handleUrenBulkInput('${w.id}', ${day}, event.key); updateTotals(); event.preventDefault(); return false; }"
 
-                                onmousedown="startDragFill(event, '${w.id}', ${day})"
+                                onkeyup="if(this.maxLength === 1) { this.value = this.value.toUpperCase(); updateCellColorOnKeyup(this); handleUrenBulkInputKeyup('${w.id}', ${day}, this); } else { handleUrenBulkInputKeyup('${w.id}', ${day}, this); }"
 
-                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">`;
+                                onblur="handleUrenBulkInput('${w.id}', ${day}, this.value);"
+
+                                onmousedown="event.stopPropagation(); startDragFill(event, '${w.id}', ${day})"
+
+                                onmouseenter="if(event.buttons === 1) { handleDragFill(event, '${w.id}', ${day}); }"
+
+                                onclick="event.stopPropagation(); this.focus(); this.select();">`;
 
                         cellStyle += `background: ${bgColor};`;
 
-                    } else if (urenValue !== '') {
+                    } else if (urenValue !== '' && urenValue !== null && urenValue !== undefined) {
 
-                        // Show uren
+                        // Show uren (including 0)
 
                         cellContent = `<input type="number" value="${urenValue}" step="0.5" min="0" 
 
@@ -2278,9 +2597,13 @@
 
                                 onchange="updateUrenBulkCell('${w.id}', ${day}, 'uren', parseFloat(this.value) || ''); updateTotals();"
 
-                                onmousedown="startDragFill(event, '${w.id}', ${day})"
+                                onkeydown="if(event.key === 'Enter') { this.blur(); event.preventDefault(); } if(event.key === 'Escape') { this.value = '${urenValue}'; this.blur(); event.preventDefault(); }"
 
-                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">`;
+                                onmousedown="event.stopPropagation(); startDragFill(event, '${w.id}', ${day})"
+
+                                onmouseenter="if(event.buttons === 1) { handleDragFill(event, '${w.id}', ${day}); }"
+
+                                onclick="event.stopPropagation(); this.focus(); this.select();">`;
 
                     } else {
 
@@ -2292,13 +2615,19 @@
 
                                 style="width: 100%; height: 100%; border: none; text-align: center; font-size: 11px; padding: 0;" 
 
-                                onchange="handleUrenBulkInput('${w.id}', ${day}, this.value); updateTotals();"
+                                onchange="handleUrenBulkInput('${w.id}', ${day}, this.value);"
+
+                                onblur="handleUrenBulkInput('${w.id}', ${day}, this.value);"
 
                                 onkeyup="handleUrenBulkInputKeyup('${w.id}', ${day}, this);"
 
-                                onmousedown="startDragFill(event, '${w.id}', ${day})"
+                                onkeydown="if(event.key === 'Enter') { handleUrenBulkInput('${w.id}', ${day}, this.value); this.blur(); event.preventDefault(); } if(event.key === 'Escape') { this.value = ''; handleUrenBulkInput('${w.id}', ${day}, ''); this.blur(); event.preventDefault(); }"
 
-                                onmouseenter="handleDragFill(event, '${w.id}', ${day})">`;
+                                onmousedown="event.stopPropagation(); startDragFill(event, '${w.id}', ${day})"
+
+                                onmouseenter="if(event.buttons === 1) { handleDragFill(event, '${w.id}', ${day}); }"
+
+                                onclick="event.stopPropagation(); this.focus(); this.select();">`;
 
                     }
 
@@ -2397,7 +2726,9 @@
 
         function handleUrenBulkInput(werknemerId, day, value) {
 
-            if (!value || value.trim() === '') {
+            const trimmedValue = value ? value.trim() : '';
+
+            if (trimmedValue === '') {
 
                 updateUrenBulkCell(werknemerId, day, 'uren', '');
 
@@ -2409,9 +2740,9 @@
 
             }
 
-            
 
-            const upperValue = value.toUpperCase().trim();
+
+            const upperValue = trimmedValue.toUpperCase();
 
             if (['A', 'V', 'S'].includes(upperValue)) {
 
@@ -2431,11 +2762,27 @@
 
                 // It's uren
 
-                const numValue = parseFloat(value);
+                const numValue = parseFloat(trimmedValue);
 
                 if (!isNaN(numValue) && numValue >= 0) {
 
+                    // Update data
+
                     updateUrenBulkCell(werknemerId, day, 'uren', numValue);
+
+                    updateUrenBulkCell(werknemerId, day, 'afwezigheid', '');
+
+                    // Ensure the input value stays what the user typed
+
+                    // Don't modify the input element, just update the data
+
+                    updateTotals();
+
+                } else {
+
+                    // Invalid number - clear
+
+                    updateUrenBulkCell(werknemerId, day, 'uren', '');
 
                     updateUrenBulkCell(werknemerId, day, 'afwezigheid', '');
 
@@ -2525,41 +2872,9 @@
 
             if (!input) return;
 
-            const value = input.value.toUpperCase().trim();
+            const value = input.value.trim();
 
-            if (['A', 'V', 'S'].includes(value)) {
-
-                // Update color immediately
-
-                updateCellColor(input);
-
-                // Update data immediately (don't wait for onchange)
-
-                updateUrenBulkCell(werknemerId, day, 'afwezigheid', value);
-
-                updateUrenBulkCell(werknemerId, day, 'uren', '');
-
-                // Update cell background
-
-                const cell = input.closest('td');
-
-                if (cell) {
-
-                    let bgColor = '#fff';
-
-                    if (value === 'V') bgColor = '#FFE699';
-
-                    else if (value === 'A') bgColor = '#D0CECE';
-
-                    else if (value === 'S') bgColor = '#B4C6E7';
-
-                    cell.style.background = bgColor;
-
-                }
-
-                updateTotals();
-
-            } else if (value === '') {
+            if (value === '') {
 
                 // Clear color
 
@@ -2577,7 +2892,125 @@
 
                 }
 
+                // Clear data
+
+                updateUrenBulkCell(werknemerId, day, 'uren', '');
+
+                updateUrenBulkCell(werknemerId, day, 'afwezigheid', '');
+
                 updateTotals();
+
+                return;
+
+            }
+
+            const upperValue = value.toUpperCase();
+
+            // Check if input was converted from afwezigheid (maxlength removed)
+
+            const wasAfwezigheid = input.getAttribute('data-was-afwezigheid') === 'true' || input.maxLength === 0 && input.value.length > 0;
+
+            if (wasAfwezigheid && /[0-9.]/.test(value)) {
+
+                // Converting from afwezigheid to uren - update immediately
+
+                const numValue = parseFloat(value);
+
+                if (!isNaN(numValue) && numValue >= 0) {
+
+                    input.style.background = '';
+
+                    input.style.fontWeight = 'normal';
+
+                    input.style.color = '';
+
+                    const cell = input.closest('td');
+
+                    if (cell) {
+
+                        cell.style.background = '';
+
+                    }
+
+                    // Update data immediately
+
+                    updateUrenBulkCell(werknemerId, day, 'uren', numValue);
+
+                    updateUrenBulkCell(werknemerId, day, 'afwezigheid', '');
+
+                    updateTotals();
+
+                    return;
+
+                }
+
+            }
+
+            if (['A', 'V', 'S'].includes(upperValue) && input.maxLength === 1) {
+
+                // Still in afwezigheid mode (single character)
+
+                // Update color immediately
+
+                updateCellColor(input);
+
+                // Update data immediately (don't wait for onchange)
+
+                updateUrenBulkCell(werknemerId, day, 'afwezigheid', upperValue);
+
+                updateUrenBulkCell(werknemerId, day, 'uren', '');
+
+                // Update cell background
+
+                const cell = input.closest('td');
+
+                if (cell) {
+
+                    let bgColor = '#fff';
+
+                    if (upperValue === 'V') bgColor = '#FFE699';
+
+                    else if (upperValue === 'A') bgColor = '#D0CECE';
+
+                    else if (upperValue === 'S') bgColor = '#B4C6E7';
+
+                    cell.style.background = bgColor;
+
+                }
+
+                updateTotals();
+
+            } else if (/[0-9.]/.test(value)) {
+
+                // It's a number - clear afwezigheid styling and update data immediately
+
+                input.style.background = '';
+
+                input.style.fontWeight = 'normal';
+
+                input.style.color = '';
+
+                const cell = input.closest('td');
+
+                if (cell) {
+
+                    cell.style.background = '';
+
+                }
+
+                // Update data immediately for numbers
+
+                const numValue = parseFloat(value);
+
+                if (!isNaN(numValue) && numValue >= 0) {
+
+                    updateUrenBulkCell(werknemerId, day, 'uren', numValue);
+
+                    updateUrenBulkCell(werknemerId, day, 'afwezigheid', '');
+
+                    updateTotals();
+
+                }
 
             }
 
@@ -3248,26 +3681,34 @@
                 return;
             }
 
-            // Check if jsPDF is available (should be loaded via script tags)
-            if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
-                alert('PDF bibliotheek niet geladen. Vernieuw de pagina en probeer opnieuw.');
-                return;
+            // Check if jsPDF is available
+            if (typeof window.jspdf === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                script.onload = () => {
+                    loadAutoTableAndExportUren(maand);
+                };
+                document.head.appendChild(script);
+            } else {
+                loadAutoTableAndExportUren(maand);
             }
+        }
 
-            generateUrenBulkPDF(maand);
+        async function loadAutoTableAndExportUren(maand) {
+            if (typeof window.jspdf !== 'undefined' && !window.jspdf.API.autoTable) {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+                script.onload = () => {
+                    generateUrenBulkPDF(maand);
+                };
+                document.head.appendChild(script);
+            } else {
+                generateUrenBulkPDF(maand);
+            }
         }
 
         async function generateUrenBulkPDF(maand) {
-            // jsPDF 3.x export structure
-            let jsPDF;
-            if (window.jspdf && window.jspdf.jsPDF) {
-                jsPDF = window.jspdf.jsPDF;
-            } else if (window.jsPDF) {
-                jsPDF = window.jsPDF;
-            } else {
-                alert('jsPDF library niet gevonden. Vernieuw de pagina.');
-                return;
-            }
+            const { jsPDF } = window.jspdf || window;
             const [year, month] = maand.split('-');
             const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
                               'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
@@ -3495,7 +3936,7 @@
 
                 html += `<td class="row-total-km" style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; background: #E2EFDA; font-size: 9px; position: sticky; right: 75px; z-index: 3;"><strong>${totaal.toFixed(1)}</strong></td>`;
 
-                html += `<td class="row-total-cost-final" style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; background: #E2EFDA; font-size: 9px; position: sticky; right: 0; z-index: 3;"><strong>&euro;${kostenPerWerknemer.toFixed(2)}</strong></td></tr>`;
+                html += `<td class="row-total-cost-final" style="border: 1px solid #ddd; padding: 4px; text-align: center; font-weight: bold; background: #E2EFDA; font-size: 9px; position: sticky; right: 0; z-index: 3;"><strong>€${kostenPerWerknemer.toFixed(2)}</strong></td></tr>`;
 
             });
 
@@ -3546,7 +3987,7 @@
 
             html += `<td class="grand-total-km" style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; font-size: 9px; font-weight: bold; position: sticky; right: 75px; z-index: 3;">${recalcGrandTotalKm.toFixed(1)}</td>`;
 
-            html += `<td class="grand-total-cost-final" style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; font-size: 9px; font-weight: bold; position: sticky; right: 0; z-index: 3;">&euro;${recalcGrandTotalCost.toFixed(2)}</td></tr>`;
+            html += `<td class="grand-total-cost-final" style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; font-size: 9px; font-weight: bold; position: sticky; right: 0; z-index: 3;">€${recalcGrandTotalCost.toFixed(2)}</td></tr>`;
 
             
 
@@ -3601,7 +4042,7 @@
 
             if (costFinalCell) {
 
-                costFinalCell.innerHTML = `<strong>&euro;${(totaal * 0.40).toFixed(2)}</strong>`;
+                costFinalCell.innerHTML = `<strong>€${(totaal * 0.40).toFixed(2)}</strong>`;
 
             }
 
@@ -3616,7 +4057,11 @@
 
         function updateKmBulkCell(werknemerId, day, input) {
 
-            const value = parseFloat(input.value) || '';
+            // CRITICAL FIX: Handle empty values properly
+            // If input is empty, set to empty string (not 0)
+            // This ensures cleared cells are saved as empty and records are deleted
+            const inputValue = input.value.trim();
+            const value = inputValue === '' ? '' : (parseFloat(inputValue) || '');
 
             if (!kmBulkData[werknemerId]) kmBulkData[werknemerId] = {};
 
@@ -3685,7 +4130,7 @@
 
                 if (totalCostFinalCell) {
 
-                    totalCostFinalCell.innerHTML = `<strong>&euro;${(totaal * 0.40).toFixed(2)}</strong>`;
+                    totalCostFinalCell.innerHTML = `<strong>€${(totaal * 0.40).toFixed(2)}</strong>`;
 
                 }
 
@@ -3745,7 +4190,7 @@
 
             if (grandTotalCostFinalCell) {
 
-                grandTotalCostFinalCell.innerHTML = `<strong>&euro;${grandTotalCost.toFixed(2)}</strong>`;
+                grandTotalCostFinalCell.innerHTML = `<strong>€${grandTotalCost.toFixed(2)}</strong>`;
 
             }
 
@@ -3779,46 +4224,44 @@
 
                     const km = kmBulkData[werknemerId][day];
 
-                    if (km !== '' && km > 0) {
+                    const datum = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
 
-                        const datum = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                    const dateStr = datum.toISOString().split('T')[0];
 
-                        const dateStr = datum.toISOString().split('T')[0];
+                    
 
-                        
+                    const allKm = await window.db.get('kilometers');
 
-                        const allKm = await window.db.get('kilometers');
+                    const existing = allKm.find(k => 
 
-                        const existing = allKm.find(k => 
+                        k.werknemerId === werknemerId && 
 
-                            k.werknemerId === werknemerId && 
+                        new Date(k.datum).toISOString().split('T')[0] === dateStr
 
-                            new Date(k.datum).toISOString().split('T')[0] === dateStr
+                    );
 
-                        );
-
-                        
-
+                    
+                    // CRITICAL FIX: Handle empty values - delete existing record if value is cleared
+                    if (km === '' || km === null || km === undefined || km === 0) {
+                        // Value is cleared - delete the record if it exists
                         if (existing) {
-
-                            await window.db.update('kilometers', existing.id, { kilometers: km });
-
-                        } else {
-
-                            await window.db.add('kilometers', {
-
-                                werknemerId,
-
-                                datum: datum.toISOString(),
-
-                                kilometers: km
-
-                            });
-
+                            await window.db.delete('kilometers', existing.id);
+                            saved++;
+                            console.log(`✓ Deleted kilometer record for day ${day}, werknemer ${werknemerId}`);
                         }
-
+                        // If no existing record, nothing to do (already empty)
+                    } else if (km > 0) {
+                        // Value exists - update or create record
+                        if (existing) {
+                            await window.db.update('kilometers', existing.id, { kilometers: km });
+                        } else {
+                            await window.db.add('kilometers', {
+                                werknemerId,
+                                datum: datum.toISOString(),
+                                kilometers: km
+                            });
+                        }
                         saved++;
-
                     }
 
                 }
@@ -3881,33 +4324,67 @@
 
             }
 
-            // Check if jsPDF is available (should be loaded via script tags)
+
+
+            // Check if jsPDF is available
 
             if (typeof window.jspdf === 'undefined') {
 
-                alert('PDF bibliotheek niet geladen. Vernieuw de pagina en probeer opnieuw.');
+                // Load jsPDF from CDN
 
-                return;
+                const script = document.createElement('script');
+
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+
+                script.onload = () => {
+
+                    loadAutoTableAndExportKm(maand);
+
+                };
+
+                document.head.appendChild(script);
+
+            } else {
+
+                loadAutoTableAndExportKm(maand);
 
             }
 
-            generateKmBulkPDF(maand);
+        }
+
+
+
+        async function loadAutoTableAndExportKm(maand) {
+
+            // Load autoTable plugin
+
+            if (typeof window.jspdf !== 'undefined' && !window.jspdf.API.autoTable) {
+
+                const script = document.createElement('script');
+
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+
+                script.onload = () => {
+
+                    generateKmBulkPDF(maand);
+
+                };
+
+                document.head.appendChild(script);
+
+            } else {
+
+                generateKmBulkPDF(maand);
+
+            }
 
         }
 
 
 
         async function generateKmBulkPDF(maand) {
-            // jsPDF 3.x export structure
-            let jsPDF;
-            if (window.jspdf && window.jspdf.jsPDF) {
-                jsPDF = window.jspdf.jsPDF;
-            } else if (window.jsPDF) {
-                jsPDF = window.jsPDF;
-            } else {
-                alert('jsPDF library niet gevonden. Vernieuw de pagina.');
-                return;
-            }
+
+            const { jsPDF } = window.jspdf || window;
 
             const [year, month] = maand.split('-');
 
@@ -4055,13 +4532,13 @@
 
                 doc.setFontSize(11);
 
-                doc.setFont('helvetica', 'bold');
+                doc.setFontStyle('bold');
 
                 doc.text(`Totaal Kilometers: ${totaalKm.toFixed(1)} km`, 14, lastY);
 
                 doc.text(`Totaal Kosten: €${totaalKosten.toFixed(2)}`, 14, lastY + 6);
 
-                doc.setFont('helvetica', 'normal');
+                doc.setFontStyle('normal');
 
 
 
@@ -4083,11 +4560,11 @@
 
                 doc.setFontSize(14);
 
-                doc.setFont('helvetica', 'italic');
+                doc.setFontStyle('italic');
 
                 doc.text(initials, 14, signatureY + 5);
 
-                doc.setFont('helvetica', 'normal');
+                doc.setFontStyle('normal');
 
                 doc.setFontSize(8);
 
@@ -4210,33 +4687,10 @@
                         
 
                         // Call IPC import
-                        let result;
-                        try {
-                            result = await window.electronAPI.importExcel(base64, file.name, importType);
-                        } catch (ipcError) {
-                            console.error('IPC call error:', ipcError);
-                            resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
-                                <strong>Fout bij communicatie met Electron:</strong><br>
-                                ${ipcError.message || ipcError.toString()}<br>
-                                <br>
-                                Probeer de app opnieuw te starten.
-                            </div>`;
-                            return;
-                        }
 
-                        // Check if result is valid
-                        if (!result) {
-                            resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Geen resultaat ontvangen van import functie</div>';
-                            return;
-                        }
+                        const result = await window.electronAPI.importExcel(base64, file.name, importType);
+
                         
-                        if (!result.success) {
-                            resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
-                                <strong>Import gefaald:</strong><br>
-                                ${result.error || 'Onbekende fout'}
-                            </div>`;
-                            return;
-                        }
 
                         console.log('Import result:', result);
                         console.log('Imported counts:', result.imported);
@@ -4249,9 +4703,9 @@
                         }
                         
                         // Always log imported counts
-                        console.log('Werknemers imported:', result.imported?.werknemers || 0);
-                        console.log('Kilometers imported:', result.imported?.kilometers || 0);
-                        console.log('Uren imported:', result.imported?.uren || 0);
+                        console.log('Werknemers imported:', result.imported.werknemers);
+                        console.log('Kilometers imported:', result.imported.kilometers);
+                        console.log('Uren imported:', result.imported.uren);
 
                         
 
@@ -4330,45 +4784,17 @@
 
                     console.error('File read error:', error);
 
-                    resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
-                        <strong>Fout bij lezen van bestand:</strong><br>
-                        ${error.message || error.toString()}<br>
-                        <br>
-                        Controleer of het bestand niet beschadigd is en probeer opnieuw.
-                    </div>`;
+                    resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Fout bij lezen van bestand</div>';
 
                 };
 
-                reader.onabort = () => {
-                    resultDiv.innerHTML = '<div class="alert" style="background: #f8d7da; color: #721c24;">Bestand lezen geannuleerd</div>';
-                };
-
-                try {
-                    reader.readAsArrayBuffer(file);
-                } catch (error) {
-                    console.error('Error starting file read:', error);
-                    resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
-                        <strong>Fout bij starten van import:</strong><br>
-                        ${error.message || error.toString()}
-                    </div>`;
-                }
+                reader.readAsArrayBuffer(file);
 
             } catch (error) {
 
                 console.error('Import error:', error);
-                console.error('Error stack:', error.stack);
 
-                resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">
-                    <strong>Fout bij importeren:</strong><br>
-                    ${error.message || error.toString()}<br>
-                    <br>
-                    <strong>Mogelijke oorzaken:</strong><br>
-                    - Bestand is niet een geldig Excel bestand (.xlsx of .xls)<br>
-                    - Bestand is te groot<br>
-                    - Bestand is beschadigd<br>
-                    <br>
-                    Open DevTools (F12) en check de Console tab voor meer details.
-                </div>`;
+                resultDiv.innerHTML = `<div class="alert" style="background: #f8d7da; color: #721c24;">Fout: ${error.message || error.toString()}</div>`;
 
             }
 
@@ -4394,7 +4820,34 @@
 
             }
 
-
+            
+            // Save current input values before reloading (to preserve unsaved changes)
+            const currentInputValues = {};
+            const table = document.querySelector('.dagontvangsten-bulk-table');
+            if (table) {
+                const inputs = table.querySelectorAll('input[data-day][data-btw]');
+                inputs.forEach(input => {
+                    const day = parseInt(input.getAttribute('data-day'));
+                    const btw = parseInt(input.getAttribute('data-btw'));
+                    const value = input.value;
+                    if (day && btw && (value !== '' || value !== null)) {
+                        if (!currentInputValues[day]) {
+                            currentInputValues[day] = { btw6: '', btw12: '', btw21: '', opmerking: '' };
+                        }
+                        const key = `btw${btw}`;
+                        const numValue = parseFloat(value);
+                        // Save the value even if empty, but prefer number if valid
+                        if (value !== '' && !isNaN(numValue)) {
+                            currentInputValues[day][key] = numValue;
+                        } else {
+                            currentInputValues[day][key] = '';
+                        }
+                    }
+                });
+            }
+            
+            // Also save current data from memory
+            const currentDataInMemory = { ...dagontvangstenBulkData };
 
             const allOntvangsten = await window.db.get('dagontvangsten');
 
@@ -4402,43 +4855,89 @@
 
             
 
-            dagontvangstenBulkData = {};
+            // CRITICAL: Always preserve current data in memory first
+            // Only reset if we're loading a different month
+            const loadedMonth = document.getElementById('dagontvangsten-maand').getAttribute('data-loaded-month');
+            
+            if (loadedMonth !== maand) {
+                // Different month - reset data and save the month
+                dagontvangstenBulkData = {};
+                document.getElementById('dagontvangsten-maand').setAttribute('data-loaded-month', maand);
+            }
+            // If same month, keep dagontvangstenBulkData as is (preserves unsaved changes)
 
             const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
 
             const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-
+            
 
             // Initialize data structure - per dag: 6%, 12%, 21% BTW
+            // Priority: current input values > current data in memory > database values
 
             days.forEach(day => {
 
-                const date = new Date(parseInt(year), parseInt(month) - 1, day);
+                // Create date string directly (YYYY-MM-DD) to avoid timezone issues
+                const yearNum = parseInt(year);
+                const monthNum = parseInt(month);
+                const dateStr = `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                // For display purposes
+                const date = new Date(yearNum, monthNum - 1, day);
 
-                const dateStr = date.toISOString().split('T')[0];
-
-                const ontvangst = allOntvangsten.find(o => 
-
-                    new Date(o.datum).toISOString().split('T')[0] === dateStr
-
-                );
+                // Find existing record by matching date string (avoid timezone conversion)
+                const ontvangst = allOntvangsten.find(o => {
+                    try {
+                        // Try to parse the stored date and compare date strings
+                        const storedDate = new Date(o.datum);
+                        const storedDateStr = `${storedDate.getFullYear()}-${String(storedDate.getMonth() + 1).padStart(2, '0')}-${String(storedDate.getDate()).padStart(2, '0')}`;
+                        return storedDateStr === dateStr;
+                    } catch (e) {
+                        return false;
+                    }
+                });
 
                 
 
                 // Get values from categorieen (6, 12, 21) or initialize empty
-
-                dagontvangstenBulkData[day] = {
-
-                    btw6: ontvangst && ontvangst.categorieen && ontvangst.categorieen['6'] ? ontvangst.categorieen['6'] : '',
-
-                    btw12: ontvangst && ontvangst.categorieen && ontvangst.categorieen['12'] ? ontvangst.categorieen['12'] : '',
-
-                    btw21: ontvangst && ontvangst.categorieen && ontvangst.categorieen['21'] ? ontvangst.categorieen['21'] : '',
-
+                const dbValue = {
+                    btw6: ontvangst && ontvangst.categorieen && ontvangst.categorieen['6'] !== undefined && ontvangst.categorieen['6'] !== null ? ontvangst.categorieen['6'] : '',
+                    btw12: ontvangst && ontvangst.categorieen && ontvangst.categorieen['12'] !== undefined && ontvangst.categorieen['12'] !== null ? ontvangst.categorieen['12'] : '',
+                    btw21: ontvangst && ontvangst.categorieen && ontvangst.categorieen['21'] !== undefined && ontvangst.categorieen['21'] !== null ? ontvangst.categorieen['21'] : '',
                     opmerking: ontvangst ? (ontvangst.opmerking || '') : ''
-
                 };
+                
+                // Merge: first database, then memory, then current input (highest priority)
+                const memValue = currentDataInMemory[day] || {};
+                const inputValue = currentInputValues[day] || {};
+                
+                // Only update if we don't already have this day's data (to preserve unsaved changes)
+                if (!dagontvangstenBulkData[day]) {
+                    dagontvangstenBulkData[day] = {
+                        btw6: inputValue.btw6 !== undefined && inputValue.btw6 !== '' ? inputValue.btw6 : 
+                              (memValue.btw6 !== undefined && memValue.btw6 !== '' ? memValue.btw6 : dbValue.btw6),
+                        btw12: inputValue.btw12 !== undefined && inputValue.btw12 !== '' ? inputValue.btw12 : 
+                               (memValue.btw12 !== undefined && memValue.btw12 !== '' ? memValue.btw12 : dbValue.btw12),
+                        btw21: inputValue.btw21 !== undefined && inputValue.btw21 !== '' ? inputValue.btw21 : 
+                               (memValue.btw21 !== undefined && memValue.btw21 !== '' ? memValue.btw21 : dbValue.btw21),
+                        opmerking: inputValue.opmerking !== undefined ? inputValue.opmerking : 
+                                   (memValue.opmerking !== undefined ? memValue.opmerking : dbValue.opmerking)
+                    };
+                } else {
+                    // Update only from input values if they exist (preserve existing memory data)
+                    if (inputValue.btw6 !== undefined && inputValue.btw6 !== '') {
+                        dagontvangstenBulkData[day].btw6 = inputValue.btw6;
+                    }
+                    if (inputValue.btw12 !== undefined && inputValue.btw12 !== '') {
+                        dagontvangstenBulkData[day].btw12 = inputValue.btw12;
+                    }
+                    if (inputValue.btw21 !== undefined && inputValue.btw21 !== '') {
+                        dagontvangstenBulkData[day].btw21 = inputValue.btw21;
+                    }
+                    if (inputValue.opmerking !== undefined) {
+                        dagontvangstenBulkData[day].opmerking = inputValue.opmerking;
+                    }
+                }
 
             });
 
@@ -4498,15 +4997,25 @@
 
                     // 6% BTW cell - zelfde hoogte als header
 
-                    html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; width: 60px; height: 35px; background: ${rowBg}; vertical-align: middle;">
+                    html += `<td style="border: 1px solid #ddd; padding: 0px; text-align: center; width: 60px; height: 35px; background: ${rowBg}; vertical-align: middle;">
 
                         <input type="number" value="${data.btw6 !== '' ? data.btw6 : ''}" step="0.01" min="0" 
 
                             data-day="${day}" data-btw="6"
 
-                            style="width: 100%; border: none; text-align: center; padding: 4px; font-size: 9px; height: 100%; box-sizing: border-box;" 
+                            style="width: 100%; height: 100%; border: none; text-align: center; font-size: 9px; padding: 0;" 
 
-                            onchange="updateDagontvangstBtwCell(${day}, 6, parseFloat(this.value) || ''); updateDagontvangstenTotals();">
+                            oninput="updateDagontvangstBtwCell(${day}, 6, parseFloat(this.value) || ''); updateDagontvangstenTotals();"
+
+                            onchange="updateDagontvangstBtwCell(${day}, 6, parseFloat(this.value) || ''); updateDagontvangstenTotals();"
+
+                            onblur="updateDagontvangstBtwCell(${day}, 6, parseFloat(this.value) || ''); updateDagontvangstenTotals();"
+
+                            onkeydown="if(event.key === 'Enter') { this.blur(); event.preventDefault(); } if(event.key === 'Escape') { this.value = '${data.btw6 !== '' ? data.btw6 : ''}'; updateDagontvangstBtwCell(${day}, 6, parseFloat(this.value) || ''); this.blur(); event.preventDefault(); }"
+
+                            onmousedown="event.stopPropagation();"
+
+                            onclick="event.stopPropagation(); this.focus(); this.select();">
 
                     </td>`;
 
@@ -4514,15 +5023,25 @@
 
                     // 12% BTW cell - zelfde hoogte als header
 
-                    html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; width: 60px; height: 35px; background: ${rowBg}; vertical-align: middle;">
+                    html += `<td style="border: 1px solid #ddd; padding: 0px; text-align: center; width: 60px; height: 35px; background: ${rowBg}; vertical-align: middle;">
 
                         <input type="number" value="${data.btw12 !== '' ? data.btw12 : ''}" step="0.01" min="0" 
 
                             data-day="${day}" data-btw="12"
 
-                            style="width: 100%; border: none; text-align: center; padding: 4px; font-size: 9px; height: 100%; box-sizing: border-box;" 
+                            style="width: 100%; height: 100%; border: none; text-align: center; font-size: 9px; padding: 0;" 
 
-                            onchange="updateDagontvangstBtwCell(${day}, 12, parseFloat(this.value) || ''); updateDagontvangstenTotals();">
+                            oninput="updateDagontvangstBtwCell(${day}, 12, parseFloat(this.value) || ''); updateDagontvangstenTotals();"
+
+                            onchange="updateDagontvangstBtwCell(${day}, 12, parseFloat(this.value) || ''); updateDagontvangstenTotals();"
+
+                            onblur="updateDagontvangstBtwCell(${day}, 12, parseFloat(this.value) || ''); updateDagontvangstenTotals();"
+
+                            onkeydown="if(event.key === 'Enter') { this.blur(); event.preventDefault(); } if(event.key === 'Escape') { this.value = '${data.btw12 !== '' ? data.btw12 : ''}'; updateDagontvangstBtwCell(${day}, 12, parseFloat(this.value) || ''); this.blur(); event.preventDefault(); }"
+
+                            onmousedown="event.stopPropagation();"
+
+                            onclick="event.stopPropagation(); this.focus(); this.select();">
 
                     </td>`;
 
@@ -4530,15 +5049,25 @@
 
                     // 21% BTW cell - zelfde hoogte als header
 
-                    html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; width: 60px; height: 35px; background: ${rowBg}; vertical-align: middle;">
+                    html += `<td style="border: 1px solid #ddd; padding: 0px; text-align: center; width: 60px; height: 35px; background: ${rowBg}; vertical-align: middle;">
 
                         <input type="number" value="${data.btw21 !== '' ? data.btw21 : ''}" step="0.01" min="0" 
 
                             data-day="${day}" data-btw="21"
 
-                            style="width: 100%; border: none; text-align: center; padding: 4px; font-size: 9px; height: 100%; box-sizing: border-box;" 
+                            style="width: 100%; height: 100%; border: none; text-align: center; font-size: 9px; padding: 0;" 
 
-                            onchange="updateDagontvangstBtwCell(${day}, 21, parseFloat(this.value) || ''); updateDagontvangstenTotals();">
+                            oninput="updateDagontvangstBtwCell(${day}, 21, parseFloat(this.value) || ''); updateDagontvangstenTotals();"
+
+                            onchange="updateDagontvangstBtwCell(${day}, 21, parseFloat(this.value) || ''); updateDagontvangstenTotals();"
+
+                            onblur="updateDagontvangstBtwCell(${day}, 21, parseFloat(this.value) || ''); updateDagontvangstenTotals();"
+
+                            onkeydown="if(event.key === 'Enter') { this.blur(); event.preventDefault(); } if(event.key === 'Escape') { this.value = '${data.btw21 !== '' ? data.btw21 : ''}'; updateDagontvangstBtwCell(${day}, 21, parseFloat(this.value) || ''); this.blur(); event.preventDefault(); }"
+
+                            onmousedown="event.stopPropagation();"
+
+                            onclick="event.stopPropagation(); this.focus(); this.select();">
 
                     </td>`;
 
@@ -4734,12 +5263,24 @@
 
             const key = `btw${btwPercentage}`;
 
-            dagontvangstenBulkData[day][key] = value;
+            // Ensure value is properly formatted: empty string for empty, number for numeric values
 
-            // Update dagtotaal cell
+            if (value === '' || value === null || value === undefined || value === 0) {
+
+                dagontvangstenBulkData[day][key] = '';
+
+            } else {
+
+                const numValue = typeof value === 'number' ? value : parseFloat(value);
+
+                dagontvangstenBulkData[day][key] = isNaN(numValue) ? '' : numValue;
+
+            }
+
+            // Update dagtotaal cell immediately
             updateDagTotaalCell(day);
 
-            // Trigger auto-save
+            // Trigger auto-save (debounced, saves after 2 seconds)
             triggerAutoSave('dagontvangsten');
 
         }
@@ -4943,14 +5484,31 @@
 
         async function saveDagontvangstenBulk(silent = false) {
 
+            console.log('💾 saveDagontvangstenBulk called, silent=', silent);
+
             const maand = document.getElementById('dagontvangsten-maand').value;
 
             if (!maand) {
+
+                console.warn('⚠ No month selected for save');
 
                 if (!silent) alert('Selecteer eerst een maand');
 
                 return;
 
+            }
+
+            console.log('📅 Saving for month:', maand);
+            
+            // Create backup before saving (especially for manual saves)
+            if (!silent && window.electronAPI && window.electronAPI.createBackup) {
+                try {
+                    await window.electronAPI.createBackup('before-dagontvangsten-save');
+                    console.log('💾 Backup created before save');
+                } catch (error) {
+                    console.error('⚠ Error creating backup:', error);
+                    // Continue with save even if backup fails
+                }
             }
 
 
@@ -4963,101 +5521,396 @@
 
 
 
-            for (let day = 1; day <= daysInMonth; day++) {
-
-                const data = dagontvangstenBulkData[day];
-
-                if (!data) continue;
-
-                
-
-                // Check if any BTW value is filled
-
-                const hasData = (typeof data.btw6 === 'number' && data.btw6 > 0) ||
-
-                               (typeof data.btw12 === 'number' && data.btw12 > 0) ||
-
-                               (typeof data.btw21 === 'number' && data.btw21 > 0);
-
-                
-
-                if (hasData) {
-
-                    const datum = new Date(parseInt(year), parseInt(month) - 1, day);
-
-                    const dateStr = datum.toISOString().split('T')[0];
-
-                    
-
-                    // Calculate total (sum of all BTW percentages)
-
-                    const totaal = (data.btw6 || 0) + (data.btw12 || 0) + (data.btw21 || 0);
-
-                    
-
-                    // Store categories as 6, 12, 21
-
-                    const categorieen = {};
-
-                    if (data.btw6 && data.btw6 > 0) categorieen['6'] = data.btw6;
-
-                    if (data.btw12 && data.btw12 > 0) categorieen['12'] = data.btw12;
-
-                    if (data.btw21 && data.btw21 > 0) categorieen['21'] = data.btw21;
-
-                    
-
-                    const allOntvangsten = await window.db.get('dagontvangsten');
-
-                    const existing = allOntvangsten.find(o => 
-
-                        new Date(o.datum).toISOString().split('T')[0] === dateStr
-
-                    );
-
-                    
-
-                    if (existing) {
-
-                        await window.db.update('dagontvangsten', existing.id, {
-
-                            totaal: totaal,
-
-                            categorieen: categorieen,
-
-                            opmerking: data.opmerking || null
-
-                        });
-
-                    } else {
-
-                        await window.db.add('dagontvangsten', {
-
-                            datum: datum.toISOString(),
-
-                            totaal: totaal,
-
-                            categorieen: categorieen,
-
-                            opmerking: data.opmerking || null
-
-                        });
-
+            // First, save all current input values to dagontvangstenBulkData
+            // This ensures we capture any values the user just typed but hasn't saved yet
+            console.log('📝 Capturing current input values from table...');
+            const table = document.querySelector('.dagontvangsten-bulk-table');
+            let inputValuesCaptured = 0;
+            if (table) {
+                const inputs = table.querySelectorAll('input[data-day][data-btw]');
+                console.log(`  Found ${inputs.length} input fields`);
+                inputs.forEach(input => {
+                    const day = parseInt(input.getAttribute('data-day'));
+                    const btw = parseInt(input.getAttribute('data-btw'));
+                    const value = input.value.trim();
+                    if (day && !isNaN(day) && btw !== null && btw !== undefined && !isNaN(btw)) {
+                        if (!dagontvangstenBulkData[day]) {
+                            dagontvangstenBulkData[day] = { btw6: '', btw12: '', btw21: '', opmerking: '' };
+                        }
+                        const key = `btw${btw}`;
+                        // Always save the value, even if empty
+                        if (value !== '' && value !== null && value !== undefined) {
+                            const numValue = parseFloat(value);
+                            dagontvangstenBulkData[day][key] = isNaN(numValue) ? '' : numValue;
+                            if (numValue && !isNaN(numValue)) {
+                                inputValuesCaptured++;
+                            }
+                        } else {
+                            // Explicitly save empty value
+                            dagontvangstenBulkData[day][key] = '';
+                        }
                     }
+                });
+                console.log(`  Captured ${inputValuesCaptured} non-empty input values`);
+            } else {
+                console.warn('⚠ No table found - cannot capture input values');
+            }
+            
+            console.log(`📊 Total days in dagontvangstenBulkData: ${Object.keys(dagontvangstenBulkData).length}`);
 
-                    saved++;
+            // Save ALL days, even if data is empty - this ensures structure is preserved
+            const allOntvangsten = await window.db.get('dagontvangsten');
+            
+            console.log(`💾 Starting save loop for ${daysInMonth} days in month ${year}-${month}`);
+            
+            // CRITICAL FIX: Only save days that are in dagontvangstenBulkData (were loaded or modified)
+            // This prevents wiping existing data for days that weren't loaded in the current view
+            const daysToSave = Object.keys(dagontvangstenBulkData).map(d => parseInt(d)).filter(d => d >= 1 && d <= daysInMonth);
+            console.log(`📋 Saving ${daysToSave.length} days that are in memory (out of ${daysInMonth} days in month)`);
+            
+            for (const day of daysToSave) {
+                // Only process days that are in dagontvangstenBulkData
+                // This ensures we don't accidentally wipe data for days that weren't loaded
+                const data = dagontvangstenBulkData[day];
+                
+                if (!data) {
+                    console.warn(`⚠ Day ${day} is in keys but data is undefined - skipping`);
+                    continue;
+                }
+                
+                // Log what data we have for this day
+                if (data.btw6 || data.btw12 || data.btw21) {
+                    console.log(`  Day ${day} data: btw6=${data.btw6}, btw12=${data.btw12}, btw21=${data.btw21}`);
+                }
 
+                // Create date string directly (YYYY-MM-DD) to avoid timezone issues
+                const yearNum = parseInt(year);
+                const monthNum = parseInt(month);
+                const dateStr = `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                // Create ISO date string for database (YYYY-MM-DDTHH:MM:SS.sssZ)
+                // Use midnight UTC to avoid timezone shifts
+                const isoDateString = `${dateStr}T00:00:00.000Z`;
+                
+                // Double check date is correct
+                if (day === 1 || day <= 3) {
+                    console.log(`  Day ${day} date check: year=${year}, month=${month}, dateStr=${dateStr}, isoDate=${isoDateString}`);
+                }
+                
+                // Calculate total (sum of all BTW percentages)
+                const totaal = (typeof data.btw6 === 'number' ? data.btw6 : 0) + 
+                               (typeof data.btw12 === 'number' ? data.btw12 : 0) + 
+                               (typeof data.btw21 === 'number' ? data.btw21 : 0);
+                
+                // Store categories as 6, 12, 21 - always save all values
+                const categorieen = {};
+                
+                // Store all BTW values - preserve all values including 0
+                // IMPORTANT: Handle 0 as a valid value (not falsy)
+                if (typeof data.btw6 === 'number') {
+                    categorieen['6'] = data.btw6;
+                } else if (data.btw6 !== '' && data.btw6 !== null && data.btw6 !== undefined) {
+                    const val6 = parseFloat(data.btw6);
+                    if (!isNaN(val6)) categorieen['6'] = val6;
+                }
+                
+                if (typeof data.btw12 === 'number') {
+                    categorieen['12'] = data.btw12;
+                } else if (data.btw12 !== '' && data.btw12 !== null && data.btw12 !== undefined) {
+                    const val12 = parseFloat(data.btw12);
+                    if (!isNaN(val12)) categorieen['12'] = val12;
+                }
+                
+                if (typeof data.btw21 === 'number') {
+                    categorieen['21'] = data.btw21;
+                } else if (data.btw21 !== '' && data.btw21 !== null && data.btw21 !== undefined) {
+                    const val21 = parseFloat(data.btw21);
+                    if (!isNaN(val21)) categorieen['21'] = val21;
+                }
+                
+                // Debug: log if we have categorieen
+                if (Object.keys(categorieen).length > 0) {
+                    console.log(`  Day ${day}: categorieen =`, categorieen, `totaal = ${totaal}`);
+                }
+                
+                // Match by date string (YYYY-MM-DD) to avoid timezone issues
+                const existing = allOntvangsten.find(o => {
+                    try {
+                        const storedDate = new Date(o.datum);
+                        const oDateStr = `${storedDate.getFullYear()}-${String(storedDate.getMonth() + 1).padStart(2, '0')}-${String(storedDate.getDate()).padStart(2, '0')}`;
+                        return oDateStr === dateStr;
+                    } catch (e) {
+                        console.warn(`Error parsing date for existing record:`, o.datum, e);
+                        return false;
+                    }
+                });
+                
+                // Update existing or create new - but only for days that were loaded/modified
+                if (existing) {
+                    // CRITICAL FIX: Only update if there's actual data to save
+                    // If categorieen is empty, preserve existing data instead of clearing it
+                    const hasDataToSave = Object.keys(categorieen).length > 0 || totaal > 0;
+                    
+                    if (!hasDataToSave) {
+                        // No data to save - skip update to preserve existing data
+                        console.log(`○ Skipped updating day ${day} (${dateStr}) - no data to save, preserving existing data`);
+                        continue;
+                    }
+                    
+                    // Update existing record - this day was loaded/modified, so save the current state
+                    try {
+                        // Merge with existing categorieen to preserve values not being updated
+                        const existingCategorieen = existing.categorieen || {};
+                        const mergedCategorieen = {
+                            ...existingCategorieen,
+                            ...categorieen  // New values override existing ones
+                        };
+                        
+                        // Also update the datum to ensure it's correct (in case it was wrong before)
+                        const updated = await window.db.update('dagontvangsten', existing.id, {
+                            datum: isoDateString, // Ensure date is correct
+                            totaal: totaal,
+                            categorieen: mergedCategorieen,
+                            opmerking: data.opmerking !== undefined ? (data.opmerking || null) : existing.opmerking
+                        });
+                        if (updated) {
+                            saved++;
+                            console.log(`✓ Updated dagontvangst day ${day} (${dateStr}): btw6=${categorieen['6'] || ''}, btw12=${categorieen['12'] || ''}, btw21=${categorieen['21'] || ''}, totaal=${totaal}`);
+                        } else {
+                            console.error(`✗ Failed to update dagontvangst day ${day} (${dateStr}) - update returned null/undefined`);
+                            console.error(`  Existing ID: ${existing.id}, Updates:`, {totaal, categorieen, opmerking: data.opmerking});
+                        }
+                    } catch (error) {
+                        console.error(`✗ Error updating dagontvangst day ${day} (${dateStr}):`, error);
+                    }
+                } else {
+                    // Only create new record if there's data (to avoid empty records)
+                    const hasData = Object.keys(categorieen).length > 0 || totaal > 0;
+                    if (hasData) {
+                        try {
+                            // Use the isoDateString already created above
+                            const created = await window.db.add('dagontvangsten', {
+                                datum: isoDateString,
+                                totaal: totaal,
+                                categorieen: categorieen,
+                                opmerking: data.opmerking || null
+                            });
+                            if (created) {
+                                saved++;
+                                console.log(`✓ Created dagontvangst day ${day} (${dateStr}): btw6=${categorieen['6'] || ''}, btw12=${categorieen['12'] || ''}, btw21=${categorieen['21'] || ''}, totaal=${totaal}`);
+                            } else {
+                                console.error(`✗ Failed to create dagontvangst day ${day} (${dateStr}) - add returned null/undefined`);
+                            }
+                        } catch (error) {
+                            console.error(`✗ Error creating dagontvangst day ${day} (${dateStr}):`, error);
+                        }
+                    } else {
+                        console.log(`○ Skipped day ${day} (${dateStr}) - no data to save`);
+                    }
                 }
 
             }
+            
+            // Small delay to ensure all database operations are complete
+            // Also wait a bit to ensure IPC messages are processed
+            await new Promise(resolve => setTimeout(resolve, 100));
 
 
 
+            // Log save result
+            console.log(`📊 Save complete: ${saved} dagontvangsten records saved`);
+            if (saved === 0) {
+                console.warn('⚠ WARNING: No records were saved! Check if data exists in dagontvangstenBulkData');
+                console.log('  Sample data:', Object.keys(dagontvangstenBulkData).slice(0, 5).map(day => ({day, data: dagontvangstenBulkData[day]})));
+            }
+            
             if (!silent) {
                 alert(`Ô£à ${saved} dagontvangsten opgeslagen!`);
+                // Only reload table on manual save, not on auto-save
+                // But preserve current input values when reloading
+                loadDagontvangstenBulk();
+            }
+            // Don't reload table on auto-save to preserve user input
+
+        }
+
+
+
+        async function exportKmBulkToPDF() {
+
+            const maand = document.getElementById('km-bulk-maand').value;
+
+            if (!maand) {
+
+                alert('Selecteer eerst een maand');
+
+                return;
+
             }
 
-            loadDagontvangstenBulk();
+            // Check if jsPDF is available
+            if (typeof window.jspdf === 'undefined') {
+                alert('jsPDF library is niet geladen. Herlaad de pagina.');
+                return;
+            }
+
+            generateKmBulkPDF(maand);
+
+        }
+
+
+
+        function generateKmBulkPDF(maand) {
+
+            if (typeof window.jspdf === 'undefined') {
+                alert('jsPDF library is niet geladen. Herlaad de pagina.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+
+            const doc = new jsPDF('landscape', 'mm', 'a4');
+
+            // Check if autoTable is available on the doc instance
+            if (typeof doc.autoTable === 'undefined') {
+                alert('autoTable plugin is niet geladen. Controleer of libs/jspdf-autotable.min.js correct is geladen.\n\nHerlaad de pagina en probeer het opnieuw.');
+                console.error('autoTable not found on doc instance.');
+                return;
+            }
+
+            const [year, month] = maand.split('-');
+            const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+                              'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+            const monthName = monthNames[parseInt(month) - 1];
+            const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+            const allDays = Array.from({ length: 31 }, (_, i) => i + 1);
+
+            // Title
+            doc.setFontSize(16);
+            doc.text('Kilometers Maandoverzicht', 14, 12);
+            doc.setFontSize(11);
+            doc.text(`${monthName} ${year}`, 14, 18);
+
+            // Get data from DOM table
+            const table = document.querySelector('.km-bulk-table');
+            if (!table) {
+                alert('Tabel niet gevonden. Laad eerst de kilometers pagina.');
+                return;
+            }
+
+            // Prepare table data from DOM
+            const tableData = [];
+            const rows = table.querySelectorAll('tbody tr[data-werknemer-id]');
+
+            rows.forEach(row => {
+                const werknemerNaam = row.querySelector('td:first-child').textContent.trim();
+                const rowData = [werknemerNaam];
+
+                // Get values for each day
+                allDays.forEach(day => {
+                    const isInMonth = day <= daysInMonth;
+                    const input = row.querySelector(`input[data-day="${day}"]`);
+                    const value = input ? (input.value || '') : '';
+                    rowData.push(isInMonth ? value : '');
+                });
+
+                // Get totals
+                const totalKmCell = row.querySelector('.row-total-km');
+                const totalCostCell = row.querySelector('.row-total-cost-final');
+                rowData.push(totalKmCell ? totalKmCell.textContent.trim() : '');
+                rowData.push(totalCostCell ? totalCostCell.textContent.trim() : '');
+                tableData.push(rowData);
+            });
+
+            // Prepare header
+            const headerRow = ['Naam Werknemer'];
+            allDays.forEach(day => {
+                headerRow.push(day.toString());
+            });
+            headerRow.push('Totaal KM');
+            headerRow.push('Totaal Kosten');
+
+            // Get grand total row data
+            const grandTotalRow = ['TOTAAL'];
+            const grandTotalRowDOM = table.querySelector('tbody tr:last-child');
+            if (grandTotalRowDOM) {
+                allDays.forEach(day => {
+                    const isInMonth = day <= daysInMonth;
+                    const cell = grandTotalRowDOM.querySelector(`td[data-day="${day}"], td:nth-child(${day + 1})`);
+                    grandTotalRow.push(isInMonth ? (cell ? cell.textContent.trim() : '') : '');
+                });
+                const grandTotalKmCell = grandTotalRowDOM.querySelector('.grand-total-km');
+                const grandTotalCostCell = grandTotalRowDOM.querySelector('.grand-total-cost-final');
+                grandTotalRow.push(grandTotalKmCell ? grandTotalKmCell.textContent.trim() : '');
+                grandTotalRow.push(grandTotalCostCell ? grandTotalCostCell.textContent.trim() : '');
+            }
+
+            // Add grand total row to table data
+            tableData.push(grandTotalRow);
+
+            // Create table with autoTable
+            doc.autoTable({
+                head: [headerRow],
+                body: tableData,
+                startY: 25,
+                styles: { fontSize: 6, cellPadding: 1 },
+                headStyles: { fillColor: [68, 114, 196], textColor: 255, fontStyle: 'bold' },
+                columnStyles: {
+                    0: { cellWidth: 40 },
+                    32: { cellWidth: 20, halign: 'right' },
+                    33: { cellWidth: 25, halign: 'right', fontStyle: 'bold' }
+                },
+                alternateRowStyles: { fillColor: [245, 245, 245] },
+                didParseCell: function(data) {
+                    // Style the last row (TOTAAL) differently
+                    if (data.row.index === tableData.length - 1) {
+                        data.cell.styles.fillColor = [197, 224, 180];
+                        data.cell.styles.fontStyle = 'bold';
+                    }
+                }
+            });
+
+            // Add signature row after the table - create a row with empty cells and signature at the end
+            const finalY = doc.lastAutoTable.finalY + 5;
+            
+            // Create signature row - empty cells for name + days + totaal KM, then handtekening label and space
+            const signatureRow = [];
+            // Add empty cells for name column + 31 days + totaal KM column
+            for (let i = 0; i < 33; i++) {
+                signatureRow.push('');
+            }
+            // Add handtekening label and empty space for signature
+            signatureRow.push('Handtekening:');
+            signatureRow.push('');
+
+            doc.autoTable({
+                body: [signatureRow],
+                startY: finalY,
+                styles: { fontSize: 9, cellPadding: 2 },
+                columnStyles: {
+                    0: { cellWidth: 40 },
+                    32: { cellWidth: 20 },
+                    33: { cellWidth: 35, halign: 'right', fontStyle: 'bold' },
+                    34: { cellWidth: 50, halign: 'left' }
+                },
+                theme: 'plain',
+                tableWidth: 'auto'
+            });
+
+            // Add footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.text(
+                    `Pagina ${i} van ${pageCount} - Gemaakt op ${new Date().toLocaleDateString('nl-NL')}`,
+                    14,
+                    doc.internal.pageSize.height - 10
+                );
+            }
+
+            // Save PDF
+            doc.save(`Kilometers_${monthName}_${year}.pdf`);
 
         }
 
@@ -5075,64 +5928,63 @@
 
             }
 
-            // Check if jsPDF is available (should be loaded via script tags)
-
-            if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
-
-                alert('PDF bibliotheek niet geladen. Vernieuw de pagina en probeer opnieuw.');
-
+            // Check if jsPDF is available
+            if (typeof window.jspdf === 'undefined') {
+                alert('jsPDF library is niet geladen. Herlaad de pagina.');
                 return;
-
             }
 
+            loadAutoTableAndExportDagontvangsten(maand);
+
+        }
+
+
+
+        async function loadAutoTableAndExportDagontvangsten(maand) {
+
+            // Check if jsPDF is loaded
+            if (typeof window.jspdf === 'undefined') {
+                alert('jsPDF library is niet geladen. Herlaad de pagina.');
+                return;
+            }
+
+            // autoTable plugin should be loaded via script tag
             generateDagontvangstenPDF(maand);
 
         }
 
 
 
-        async function generateDagontvangstenPDF(maand) {
-            // jsPDF 3.x export structure
-            let jsPDF;
-            if (window.jspdf && window.jspdf.jsPDF) {
-                jsPDF = window.jspdf.jsPDF;
-            } else if (window.jsPDF) {
-                jsPDF = window.jsPDF;
-            } else {
-                alert('jsPDF library niet gevonden. Vernieuw de pagina.');
+        function generateDagontvangstenPDF(maand) {
+
+            if (typeof window.jspdf === 'undefined') {
+                alert('jsPDF library is niet geladen. Herlaad de pagina.');
                 return;
             }
 
-            // Load data from database
-            const allOntvangsten = await window.db.get('dagontvangsten');
-            const [year, month] = maand.split('-');
-            const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
-            
-            // Build dagontvangstenBulkData from database (same structure as loadDagontvangstenBulk)
-            const dagontvangstenBulkData = {};
-            for (let day = 1; day <= daysInMonth; day++) {
-                const date = new Date(parseInt(year), parseInt(month) - 1, day);
-                const dateStr = date.toISOString().split('T')[0];
-                const ontvangst = allOntvangsten.find(o => 
-                    new Date(o.datum).toISOString().split('T')[0] === dateStr
-                );
-                
-                // Get values from categorieen (6, 12, 21) or initialize empty
-                dagontvangstenBulkData[day] = {
-                    btw6: ontvangst && ontvangst.categorieen && ontvangst.categorieen['6'] ? ontvangst.categorieen['6'] : '',
-                    btw12: ontvangst && ontvangst.categorieen && ontvangst.categorieen['12'] ? ontvangst.categorieen['12'] : '',
-                    btw21: ontvangst && ontvangst.categorieen && ontvangst.categorieen['21'] ? ontvangst.categorieen['21'] : '',
-                    opmerking: ontvangst ? (ontvangst.opmerking || '') : ''
-                };
-            }
+            const { jsPDF } = window.jspdf;
 
             const doc = new jsPDF('portrait', 'mm', 'a4');
+
+            // Check if autoTable is available on the doc instance
+            if (typeof doc.autoTable === 'undefined') {
+                alert('autoTable plugin is niet geladen. Controleer of libs/jspdf-autotable.min.js correct is geladen.\n\nHerlaad de pagina en probeer het opnieuw.');
+                console.error('autoTable not found on doc instance. window.jspdf:', window.jspdf);
+                console.error('Available methods on doc:', Object.keys(doc).filter(k => typeof doc[k] === 'function'));
+                return;
+            }
+
+            const [year, month] = maand.split('-');
 
             const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
 
                               'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
 
             const monthName = monthNames[parseInt(month) - 1];
+
+            const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
+            
 
             // Title
 
@@ -5302,13 +6154,13 @@
 
                 'TOTAAL',
 
-                '&euro;' + totaalIncl.toFixed(2),
+                '€' + totaalIncl.toFixed(2),
 
-                '&euro;' + totaalExcl.toFixed(2),
+                '€' + totaalExcl.toFixed(2),
 
-                '&euro;' + totaalBtw.toFixed(2),
+                '€' + totaalBtw.toFixed(2),
 
-                '&euro;' + totaalDagTotaal.toFixed(2)
+                '€' + totaalDagTotaal.toFixed(2)
 
             ]);
 
@@ -5364,13 +6216,13 @@
 
                 body: [
 
-                    ['6%', '&euro;' + totaal6Incl.toFixed(2), '&euro;' + totaal6Excl.toFixed(2), '&euro;' + btw6.toFixed(2)],
+                    ['6%', '€' + totaal6Incl.toFixed(2), '€' + totaal6Excl.toFixed(2), '€' + btw6.toFixed(2)],
 
-                    ['12%', '&euro;' + totaal12Incl.toFixed(2), '&euro;' + totaal12Excl.toFixed(2), '&euro;' + btw12.toFixed(2)],
+                    ['12%', '€' + totaal12Incl.toFixed(2), '€' + totaal12Excl.toFixed(2), '€' + btw12.toFixed(2)],
 
-                    ['21%', '&euro;' + totaal21Incl.toFixed(2), '&euro;' + totaal21Excl.toFixed(2), '&euro;' + btw21.toFixed(2)],
+                    ['21%', '€' + totaal21Incl.toFixed(2), '€' + totaal21Excl.toFixed(2), '€' + btw21.toFixed(2)],
 
-                    ['TOTAAL', '&euro;' + totaalIncl.toFixed(2), '&euro;' + totaalExcl.toFixed(2), '&euro;' + totaalBtw.toFixed(2)]
+                    ['TOTAAL', '€' + totaalIncl.toFixed(2), '€' + totaalExcl.toFixed(2), '€' + totaalBtw.toFixed(2)]
 
                 ],
 
@@ -5394,13 +6246,9 @@
 
                 didDrawCell: function(data) {
 
-                    // Make last row bold
+                    // Make last row bold - fontStyle is already set in columnStyles for last column
 
-                    if (data.row.index === 3) {
-
-                        doc.setFont('helvetica', 'bold');
-
-                    }
+                    // No need to manually set font style here
 
                 }
 
@@ -6080,16 +6928,29 @@
 
             }
 
-            // Check if jsPDF is available (should be loaded via script tags)
 
+
+            // Check if jsPDF is available
             if (typeof window.jspdf === 'undefined') {
-
-                alert('PDF bibliotheek niet geladen. Vernieuw de pagina en probeer opnieuw.');
-
+                alert('jsPDF library is niet geladen. Herlaad de pagina.');
                 return;
-
             }
 
+            loadAutoTableAndExport(jaar);
+
+        }
+
+
+
+        async function loadAutoTableAndExport(jaar) {
+
+            // Check if jsPDF is loaded
+            if (typeof window.jspdf === 'undefined') {
+                alert('jsPDF library is niet geladen. Herlaad de pagina.');
+                return;
+            }
+
+            // autoTable plugin should be loaded via script tag
             generatePDF(jaar);
 
         }
@@ -6097,18 +6958,22 @@
 
 
         function generatePDF(jaar) {
-            // jsPDF 3.x export structure
-            let jsPDF;
-            if (window.jspdf && window.jspdf.jsPDF) {
-                jsPDF = window.jspdf.jsPDF;
-            } else if (window.jsPDF) {
-                jsPDF = window.jsPDF;
-            } else {
-                alert('jsPDF library niet gevonden. Vernieuw de pagina.');
+
+            if (typeof window.jspdf === 'undefined') {
+                alert('jsPDF library is niet geladen. Herlaad de pagina.');
                 return;
             }
 
+            const { jsPDF } = window.jspdf;
+
             const doc = new jsPDF('landscape', 'mm', 'a4');
+
+            // Check if autoTable is available on the doc instance
+            if (typeof doc.autoTable === 'undefined') {
+                alert('autoTable plugin is niet geladen. Controleer of libs/jspdf-autotable.min.js correct is geladen.\n\nHerlaad de pagina en probeer het opnieuw.');
+                console.error('autoTable not found on doc instance.');
+                return;
+            }
 
             const year = parseInt(jaar);
 
@@ -6180,7 +7045,7 @@
 
                     monthTotalVerkocht.toString(),
 
-                    monthTotalTotaal > 0 ? monthTotalTotaal.toFixed(2) + ' &euro;' : '0.00 &euro;'
+                    monthTotalTotaal > 0 ? monthTotalTotaal.toFixed(2) + ' €' : '0.00 €'
 
                 ]);
 
@@ -6230,7 +7095,7 @@
 
                 grandTotalVerkocht.toString(),
 
-                grandTotalTotaal > 0 ? grandTotalTotaal.toFixed(2) + ' &euro;' : '0.00 &euro;'
+                grandTotalTotaal > 0 ? grandTotalTotaal.toFixed(2) + ' €' : '0.00 €'
 
             ]);
 
@@ -6240,7 +7105,7 @@
 
             doc.autoTable({
 
-                head: [['Maand', 'Gratis Gegeven', 'Verkocht', 'Totaal (&euro;2.30/stuk)']],
+                head: [['Maand', 'Gratis Gegeven', 'Verkocht', 'Totaal (€2.30/stuk)']],
 
                 body: tableData,
 
@@ -6299,6 +7164,121 @@
         }
 
 
+
+        // Backup & Restore Functions
+        async function createManualBackup() {
+            try {
+                if (!window.electronAPI || !window.electronAPI.createBackup) {
+                    alert('Backup functionaliteit niet beschikbaar');
+                    return;
+                }
+                
+                const result = await window.electronAPI.createBackup('manual');
+                if (result.success) {
+                    alert('✅ Backup succesvol gemaakt!');
+                    await loadBackupList();
+                } else {
+                    alert('❌ Fout bij maken backup: ' + (result.error || 'Onbekende fout'));
+                }
+            } catch (error) {
+                console.error('Error creating backup:', error);
+                alert('❌ Fout bij maken backup: ' + error.message);
+            }
+        }
+
+        async function loadBackupList() {
+            try {
+                const listDiv = document.getElementById('backup-list');
+                if (!listDiv) return;
+                
+                listDiv.innerHTML = '<p>Laden...</p>';
+                
+                if (!window.electronAPI || !window.electronAPI.getBackupList) {
+                    listDiv.innerHTML = '<p style="color: red;">Backup functionaliteit niet beschikbaar</p>';
+                    return;
+                }
+                
+                const result = await window.electronAPI.getBackupList();
+                
+                if (!result.success) {
+                    listDiv.innerHTML = '<p style="color: red;">Fout bij laden backups: ' + (result.error || 'Onbekende fout') + '</p>';
+                    return;
+                }
+                
+                const backups = result.backups || [];
+                
+                if (backups.length === 0) {
+                    listDiv.innerHTML = '<p>Geen backups gevonden</p>';
+                    return;
+                }
+                
+                let html = '<table style="width: 100%; border-collapse: collapse;">';
+                html += '<thead><tr style="background: #4472C4; color: white;">';
+                html += '<th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Backup Bestand</th>';
+                html += '<th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Datum & Tijd</th>';
+                html += '<th style="padding: 10px; text-align: right; border: 1px solid #ddd;">Grootte</th>';
+                html += '<th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Acties</th>';
+                html += '</tr></thead><tbody>';
+                
+                backups.forEach((backup, index) => {
+                    const date = new Date(backup.created);
+                    const dateStr = date.toLocaleString('nl-NL');
+                    const sizeKB = (backup.size / 1024).toFixed(2);
+                    const reason = backup.fileName.match(/-([^-]+)\.json$/)?.[1] || 'unknown';
+                    
+                    const rowBg = index % 2 === 0 ? '#ffffff' : '#f5f5f5';
+                    html += `<tr style="background: ${rowBg};">`;
+                    html += `<td style="padding: 10px; border: 1px solid #ddd;">${backup.fileName}</td>`;
+                    html += `<td style="padding: 10px; border: 1px solid #ddd;">${dateStr}</td>`;
+                    html += `<td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${sizeKB} KB</td>`;
+                    html += `<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">`;
+                    html += `<button class="btn btn-primary" onclick="restoreBackup('${backup.filePath.replace(/'/g, "\\'")}', '${backup.fileName}')" style="margin: 0 5px;">Herstel</button>`;
+                    html += `</td>`;
+                    html += `</tr>`;
+                });
+                
+                html += '</tbody></table>';
+                listDiv.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading backup list:', error);
+                const listDiv = document.getElementById('backup-list');
+                if (listDiv) {
+                    listDiv.innerHTML = '<p style="color: red;">Fout bij laden backups: ' + error.message + '</p>';
+                }
+            }
+        }
+
+        async function restoreBackup(backupFilePath, fileName) {
+            if (!confirm(`Weet je zeker dat je deze backup wilt herstellen?\n\nBackup: ${fileName}\n\n⚠️ WAARSCHUWING: Dit zal de huidige database overschrijven!`)) {
+                return;
+            }
+            
+            if (!confirm('Dit is een definitieve actie. Weet je het zeker?')) {
+                return;
+            }
+            
+            try {
+                if (!window.electronAPI || !window.electronAPI.restoreBackup) {
+                    alert('Restore functionaliteit niet beschikbaar');
+                    return;
+                }
+                
+                const result = await window.electronAPI.restoreBackup(backupFilePath);
+                
+                if (result.success) {
+                    alert('✅ Database succesvol hersteld uit backup!\n\nDe applicatie wordt nu herladen...');
+                    // Reload the page to load the restored data
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    alert('❌ Fout bij herstellen backup: ' + (result.error || 'Onbekende fout'));
+                }
+            } catch (error) {
+                console.error('Error restoring backup:', error);
+                alert('❌ Fout bij herstellen backup: ' + error.message);
+            }
+        }
 
     </script>
 

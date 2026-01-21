@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('db', {
   add: (table, item) => ipcRenderer.invoke('db:add', table, item),
   update: (table, id, updates) => ipcRenderer.invoke('db:update', table, id, updates),
   delete: (table, id) => ipcRenderer.invoke('db:delete', table, id),
+  forceSave: () => ipcRenderer.invoke('db:force-save'),
 });
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -14,5 +15,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   analyzeExcel: (base64, fileName) => ipcRenderer.invoke('analyze:excel', base64, fileName),
   importDagontvangsten: (base64, fileName) => ipcRenderer.invoke('import:dagontvangsten', base64, fileName),
   importGratisCola: (base64, fileName) => ipcRenderer.invoke('import:gratiscola', base64, fileName),
+  onWindowClose: (callback) => {
+    ipcRenderer.on('window-close', callback);
+  },
+  saveComplete: () => {
+    ipcRenderer.send('save-complete');
+  },
+  createBackup: (reason) => ipcRenderer.invoke('backup:create', reason),
+  getBackupList: () => ipcRenderer.invoke('backup:list'),
+  restoreBackup: (backupFilePath) => ipcRenderer.invoke('backup:restore', backupFilePath),
 });
 
