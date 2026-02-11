@@ -488,19 +488,17 @@
 
             <button onclick="showPage('werknemers')" class="active">Werknemers</button>
 
-            <button onclick="showPage('uren')">Uren</button>
-
+            <!-- Uren en Kilometers (losse tabs) inactief - verborgen -->
+            <button onclick="showPage('uren')" class="nav-inactive" style="display: none;">Uren</button>
             <button onclick="showPage('uren-bulk')">Uren Maandoverzicht</button>
-
-            <button onclick="showPage('kilometers')">Kilometers</button>
-
+            <button onclick="showPage('kilometers')" class="nav-inactive" style="display: none;">Kilometers</button>
             <button onclick="showPage('kilometers-bulk')">Kilometers Maandoverzicht</button>
 
             <button onclick="showPage('dagontvangsten')">Dagontvangsten</button>
 
             <button onclick="showPage('gratis-cola')">Gratis Cola</button>
 
-            <button onclick="showPage('import')">Import Excel</button>
+            <button onclick="showPage('import')" class="nav-inactive" style="display: none;">Import Excel</button>
 
             <button onclick="showPage('backup')">Backup & Herstel</button>
 
@@ -1847,7 +1845,7 @@
 
         async function deleteWerknemer(id) {
 
-            if (confirm('Weet u zeker dat u deze werknemer wilt verwijderen?')) {
+            if (confirm('Weet u zeker dat u deze werknemer op inactief wilt zetten? De werknemer wordt niet verwijderd en blijft zichtbaar in de lijst als inactief.')) {
 
                 await window.db.delete('werknemers', id);
 
@@ -6358,12 +6356,12 @@
 
                     
 
+                    // Zorg dat waarden als getal bewaard worden voor totalen
+                    const gratisNum = cola ? (Number(cola.gratis) || 0) : 0;
+                    const verkochtNum = cola ? (Number(cola.verkocht) || 0) : 0;
                     gratisColaBulkData[day][month] = cola ? {
-
-                        gratis: cola.gratis || '',
-
-                        verkocht: cola.verkocht || ''
-
+                        gratis: gratisNum > 0 ? gratisNum : '',
+                        verkocht: verkochtNum > 0 ? verkochtNum : ''
                     } : { gratis: '', verkocht: '' };
 
                 }
@@ -6398,6 +6396,8 @@
 
             }
 
+            html += `<th colspan="4" style="border: 1px solid #ddd; padding: 2px; text-align: center; min-width: 130px; background: #4472C4; color: white; font-size: 9px;">Jaartotaal</th>`;
+
             html += '</tr>';
 
             
@@ -6417,6 +6417,8 @@
                 html += '<th style="border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 8px; width: 30px;">Totaal</th>';
 
             }
+
+            html += '<th style="border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 8px;">-</th><th style="border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 8px;">Gratis</th><th style="border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 8px;">Aantal</th><th style="border: 1px solid #ddd; padding: 2px; text-align: center; font-size: 8px;">Totaal</th>';
 
             html += '</tr></thead><tbody>';
 
@@ -6505,7 +6507,9 @@
 
                 }
 
-                
+                // Jaartotaal-kolom: lege cellen per dag
+
+                html += '<td style="border: 1px solid #ddd; padding: 2px; background: #f5f5f5;"></td><td></td><td></td><td></td>';
 
                 html += '</tr>';
 
@@ -6513,15 +6517,19 @@
 
             
 
-            // Grand total row (shows total of all months)
+            // Maandtotaal per maand + jaartotaal rij
 
             let grandTotalGratis = 0;
 
             let grandTotalVerkocht = 0;
 
+            html += '<tr style="background: #C5E0B4; font-weight: bold;" class="gratis-cola-total-row">';
+
             for (let month = 1; month <= 12; month++) {
 
                 const daysInMonth = new Date(year, month, 0).getDate();
+
+                let monthGratis = 0, monthVerkocht = 0;
 
                 for (let day = 1; day <= daysInMonth; day++) {
 
@@ -6529,33 +6537,36 @@
 
                     if (data) {
 
-                        if (typeof data.gratis === 'number' && data.gratis > 0) grandTotalGratis += data.gratis;
-
-                        if (typeof data.verkocht === 'number' && data.verkocht > 0) grandTotalVerkocht += data.verkocht;
+                        const g = Number(data.gratis);
+                        const v = Number(data.verkocht);
+                        if (!isNaN(g) && g > 0) { monthGratis += g; grandTotalGratis += g; }
+                        if (!isNaN(v) && v > 0) { monthVerkocht += v; grandTotalVerkocht += v; }
 
                     }
 
                 }
 
-            }
+                const monthTotaal = monthVerkocht * 2.30;
 
-            
+                html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center; background: #C5E0B4; width: 35px; font-size: 8px;">Totaal</td>`;
+
+                html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; width: 30px; font-size: 9px;">${monthGratis || ''}</td>`;
+
+                html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; width: 30px; font-size: 9px;">${monthVerkocht || ''}</td>`;
+
+                html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; width: 30px; font-size: 9px;">${monthTotaal > 0 ? monthTotaal.toFixed(2) : ''}</td>`;
+
+            }
 
             const grandTotalTotaal = grandTotalVerkocht * 2.30;
 
-            
+            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #4472C4; color: white; font-size: 9px;">Jaar</td>`;
 
-            html += '<tr style="background: #C5E0B4; font-weight: bold;">';
+            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #4472C4; color: white; font-size: 9px;">${grandTotalGratis}</td>`;
 
-            html += `<td style="border: 1px solid #ddd; padding: 2px; text-align: center; background: #C5E0B4; width: 35px;"></td>`;
+            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #4472C4; color: white; font-size: 9px;">${grandTotalVerkocht}</td>`;
 
-            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; width: 30px; font-size: 9px;">${grandTotalGratis}</td>`;
-
-            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; width: 30px; font-size: 9px;">${grandTotalVerkocht}</td>`;
-
-            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #C5E0B4; width: 30px; font-size: 9px;">${grandTotalTotaal > 0 ? grandTotalTotaal.toFixed(2) : ''}</td>`;
-
-            html += `<td colspan="${12 * 4 - 4}" style="border: 1px solid #ddd; padding: 2px; background: #C5E0B4;"></td>`;
+            html += `<td style="border: 1px solid #ddd; padding: 4px; text-align: center; background: #4472C4; color: white; font-size: 9px;">${grandTotalTotaal >= 0 ? grandTotalTotaal.toFixed(2) : ''}</td>`;
 
             html += '</tr>';
 
@@ -6690,29 +6701,23 @@
 
             
 
-            // Update month totals (row 32)
+            // Update maandtotaal en jaartotaal (laatste rij = totalenrij)
 
-            const totalRow = rows[31]; // Row 32 (index 31)
-
-            
+            const totalRow = rows[31]; // 32e rij (index 31): totalen
 
             if (totalRow) {
 
                 const cells = totalRow.querySelectorAll('td');
 
-                let cellIdx = 1; // Skip first cell (TOTAAL label)
+                let cellIdx = 0;
 
-                
+                let grandTotalGratis = 0, grandTotalVerkocht = 0;
 
                 for (let month = 1; month <= 12; month++) {
 
-                    let monthTotalGratis = 0;
-
-                    let monthTotalVerkocht = 0;
+                    let monthTotalGratis = 0, monthTotalVerkocht = 0;
 
                     const daysInMonth = new Date(year, month, 0).getDate();
-
-                    
 
                     for (let day = 1; day <= daysInMonth; day++) {
 
@@ -6720,29 +6725,28 @@
 
                         if (data) {
 
-                            if (typeof data.gratis === 'number' && data.gratis > 0) monthTotalGratis += data.gratis;
-
-                            if (typeof data.verkocht === 'number' && data.verkocht > 0) monthTotalVerkocht += data.verkocht;
+                            const g = Number(data.gratis);
+                            const v = Number(data.verkocht);
+                            if (!isNaN(g) && g > 0) { monthTotalGratis += g; grandTotalGratis += g; }
+                            if (!isNaN(v) && v > 0) { monthTotalVerkocht += v; grandTotalVerkocht += v; }
 
                         }
 
                     }
 
-                    
-
                     const monthTotalTotaal = monthTotalVerkocht * 2.30;
 
-                    
+                    cellIdx++; // Totaal-label
 
-                    // Skip date cell, update three value cells
-
-                    cellIdx++; // date cell
-
-                    if (cells[cellIdx]) cells[cellIdx].textContent = monthTotalGratis;
+                    if (cells[cellIdx]) cells[cellIdx].textContent = 'Totaal';
 
                     cellIdx++;
 
-                    if (cells[cellIdx]) cells[cellIdx].textContent = monthTotalVerkocht;
+                    if (cells[cellIdx]) cells[cellIdx].textContent = monthTotalGratis || '';
+
+                    cellIdx++;
+
+                    if (cells[cellIdx]) cells[cellIdx].textContent = monthTotalVerkocht || '';
 
                     cellIdx++;
 
@@ -6752,56 +6756,17 @@
 
                 }
 
-            }
+                const grandTotalTotaal = grandTotalVerkocht * 2.30;
 
-            
-
-            // Update grand total (row 34)
-
-            let grandTotalGratis = 0;
-
-            let grandTotalVerkocht = 0;
-
-            for (let month = 1; month <= 12; month++) {
-
-                const daysInMonth = new Date(year, month, 0).getDate();
-
-                for (let day = 1; day <= daysInMonth; day++) {
-
-                    const data = gratisColaBulkData[day] && gratisColaBulkData[day][month];
-
-                    if (data) {
-
-                        if (typeof data.gratis === 'number' && data.gratis > 0) grandTotalGratis += data.gratis;
-
-                        if (typeof data.verkocht === 'number' && data.verkocht > 0) grandTotalVerkocht += data.verkocht;
-
-                    }
-
-                }
-
-            }
-
-            
-
-            const grandTotalTotaal = grandTotalVerkocht * 2.30;
-
-            
-
-            const grandTotalRow = rows[32]; // Row 34 (index 32)
-
-            if (grandTotalRow) {
-
-                const cells = grandTotalRow.querySelectorAll('td');
-
-                if (cells.length > 2) {
-
-                    cells[2].textContent = grandTotalGratis;
-
-                    cells[3].textContent = grandTotalVerkocht;
-
-                    cells[4].textContent = grandTotalTotaal > 0 ? grandTotalTotaal.toFixed(2) : '';
-
+                // Jaartotaal: altijd vullen (ook bij 0) - controleer of we 4 extra cellen hebben
+                if (cells.length >= cellIdx + 4) {
+                    if (cells[cellIdx]) cells[cellIdx].textContent = 'Jaar';
+                    cellIdx++;
+                    if (cells[cellIdx]) cells[cellIdx].textContent = grandTotalGratis;
+                    cellIdx++;
+                    if (cells[cellIdx]) cells[cellIdx].textContent = grandTotalVerkocht;
+                    cellIdx++;
+                    if (cells[cellIdx]) cells[cellIdx].textContent = grandTotalTotaal >= 0 ? grandTotalTotaal.toFixed(2) : '';
                 }
 
             }

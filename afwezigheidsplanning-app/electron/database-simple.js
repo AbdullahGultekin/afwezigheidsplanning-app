@@ -345,17 +345,15 @@ function generateId() {
 // Database operations
 const databaseOps = {
   // Werknemer
-  getWerknemers: (includeInactive = false) => {
-    if (includeInactive) {
-      return dbData.werknemers;
+  getWerknemers: (includeInactive = true) => {
+    if (!includeInactive) {
+      // Alleen actieve werknemers (voor dropdowns, overzichten)
+      return dbData.werknemers.filter(w => {
+        if (w.status !== undefined) return w.status === 'actief';
+        return w.actief !== false;
+      });
     }
-    // Filter by status if available, otherwise use actief for backward compatibility
-    return dbData.werknemers.filter(w => {
-      if (w.status !== undefined) {
-        return w.status === 'actief';
-      }
-      return w.actief !== false;
-    });
+    return dbData.werknemers;
   },
 
   getWerknemer: (id) => {
@@ -403,7 +401,10 @@ const databaseOps = {
   deleteWerknemer: (id) => {
     const index = dbData.werknemers.findIndex(w => w.id === id);
     if (index !== -1) {
+      // Op inactief zetten, niet echt verwijderen - blijft bewaard
       dbData.werknemers[index].actief = false;
+      dbData.werknemers[index].status = 'inactief';
+      dbData.werknemers[index].updatedAt = new Date().toISOString();
       saveDatabase();
     }
   },
